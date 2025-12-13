@@ -1,0 +1,29 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "haha",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "run": "nodemon index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/laurefindele-o-catto/OpenScholars.git"
+  },
+  "keywords": [
+    "Research",
+    "Papers"
+  ],
+  "author": "Epshita Jahan, Shafnan Wasif",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/laurefindele-o-catto/OpenScholars/issues"
+  },
+  "homepage": "https://github.com/laurefindele-o-catto/OpenScholars#readme",
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "nodemon": "^3.1.11"
+  }
+}
