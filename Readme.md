@@ -1,1 +1,1 @@
-//descriptions
+//after pulling, run npm i in cd frontend and backend.
