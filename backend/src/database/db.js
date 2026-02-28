@@ -3,7 +3,7 @@ const pkg = require('pg');
 const {Pool} = pkg;
 const path = require('path');
 
-//dotenv.config({path: path.resolve(__dirname, '../../.env')});
+dotenv.config({path: path.resolve(__dirname, '../../.env')});
 
 class DB_Connection{
     static #instance;
@@ -18,7 +18,7 @@ class DB_Connection{
         
         const connectionConfig = {
             connectionString: process.env.DATABASE_URL,
-            ssl: false
+            ssl: true
         };
 
         this.pool = new Pool(connectionConfig);
