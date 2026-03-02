@@ -1,67 +1,4 @@
-const DB_Connection = require('../database/db.js');
-
-class CreateTables {
-    constructor() {
-        this.db_connection = DB_Connection.getInstance();
-    }
-
-    demoQueries = async () => {
-        try {
-            const query = `
-    INSERT INTO "user" (username, full_name, email, password_hash, created_at)
-    VALUES ('epshita_j', 'Epshita Jahan', 'epshita@example.com', 's0134#45%', now());
-
-
-    INSERT INTO author (name, orc_id)
-    VALUES ('Epshita Jahan', '0000-0002-1825-0097');
-
-
-    INSERT INTO researcher (user_id, author_id)
-    VALUES (1, 1);
-
-    INSERT INTO publisher(name)
-    VALUES ('IEEE');
-
-    INSERT INTO venue(name, type, publisher_id)
-    VALUES('IEEE Robotics', 'Journal', 1);
-
-
-    INSERT INTO paper (title, publication_date, pdf_url, doi, venue_id)
-    VALUES ('A Case Study of Magic in Fantasy',
-        '2026-01-15',
-        'http://lotr.com/fantasy.pdf',
-        '10.1234/exampledoi',
-        1);
-
-
-    INSERT INTO paper_author (paper_id, author_id, position)
-    VALUES (1, 1, 1);
-            `;
-
-            const res = await this.db_connection.query_executor(query);
-            console.log("query executed");
-        } catch (err) {
-            console.log(err);
-        }
-    }
-
-    checkConnection = async () => {
-        try {
-            const query = `
-            DROP TABLE paperboat;
-            `;
-
-            const res = await this.db_connection.query_executor(query);
-            console.log("query executed");
-        } catch (err) {
-            console.log(err);
-        }
-    }
-
-    createAllTables = async () => {
-        try {
-            const query = `
-            CREATE TABLE "user" (
+CREATE TABLE "user" (
     id SERIAL PRIMARY KEY,
     username VARCHAR(100) UNIQUE NOT NULL,
     full_name VARCHAR(200) NOT NULL,
@@ -75,12 +12,14 @@ class CreateTables {
     bio TEXT
 );
 
+
+
 CREATE TABLE follows (
     following_user_id INTEGER NOT NULL,
     followed_user_id INTEGER NOT NULL,
     CONSTRAINT fk_following FOREIGN KEY (following_user_id) REFERENCES "user"(id) ON DELETE CASCADE,
     CONSTRAINT fk_followed FOREIGN KEY (followed_user_id) REFERENCES "user"(id) ON DELETE CASCADE,
-    CONSTRAINT follows_unique UNIQUE (following_user_id, followed_user_id),
+    CONSTRAINT follows_unique PRIMARY KEY (following_user_id, followed_user_id),
     CONSTRAINT follows_self_check CHECK (following_user_id <> followed_user_id)
 );
 
@@ -289,18 +228,8 @@ CREATE TABLE paper_notification (
     paper_id INTEGER NOT NULL REFERENCES paper(id) ON DELETE CASCADE
 );
 
+
 CREATE TABLE review_notification (
     notification_id INTEGER PRIMARY KEY REFERENCES notification(id) ON DELETE CASCADE,
     review_id INTEGER NOT NULL REFERENCES review(id) ON DELETE CASCADE
 );
-`;
-
-            const res = await this.db_connection.query_executor(query);
-            console.log("query executed");
-        } catch (err) {
-            console.log(err);
-        }
-    }
-}
-
-module.exports = CreateTables;
