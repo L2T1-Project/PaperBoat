@@ -1,0 +1,232 @@
+{
+  "info": {
+    "name": "OpenScholars - User CRUD",
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "description": "CRUD operations for the User model in OpenScholars backend.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Create User",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"johndoe\",\n  \"full_name\": \"John Doe\",\n  \"email\": \"johndoe@example.com\",\n  \"password_hash\": \"$2b$10$examplehashedpassword\",\n  \"phone_number\": \"+1234567890\",\n  \"status_id\": 1,\n  \"bio\": \"Researcher in machine learning and computer vision.\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/users",
+          "host": ["{{base_url}}"],
+          "path": ["api", "users"]
+        },
+        "description": "Creates a new user. Required fields: username, full_name, email, password_hash, status_id."
+      },
+      "response": []
+    },
+    {
+      "name": "Get All Users",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/users",
+          "host": ["{{base_url}}"],
+          "path": ["api", "users"]
+        },
+        "description": "Returns all users ordered by creation date descending."
+      },
+      "response": []
+    },
+    {
+      "name": "Get User By ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/users/{{user_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "users", "{{user_id}}"]
+        },
+        "description": "Returns a single user by their numeric ID. Set the 'user_id' collection variable to change the target user."
+      },
+      "response": []
+    },
+    {
+      "name": "Update User",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"johndoe_updated\",\n  \"full_name\": \"John Doe Updated\",\n  \"email\": \"johndoe_updated@example.com\",\n  \"phone_number\": \"+9876543210\",\n  \"profile_pic_url\": \"https://example.com/pics/johndoe.jpg\",\n  \"bio\": \"Updated bio: Senior researcher in NLP.\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/users/{{user_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "users", "{{user_id}}"]
+        },
+        "description": "Updates an existing user by ID. Required fields: username, full_name, email."
+      },
+      "response": []
+    },
+    {
+      "name": "Delete User",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/users/{{user_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "users", "{{user_id}}"]
+        },
+        "description": "Deletes a user by ID. Returns the deleted user's id, username, full_name, and email."
+      },
+      "response": []
+    },
+    {
+      "name": "[Error] Create User - Missing Required Fields",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"incomplete_user\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/users",
+          "host": ["{{base_url}}"],
+          "path": ["api", "users"]
+        },
+        "description": "Expects 400 - Missing required fields (full_name, email, password_hash, status_id)."
+      },
+      "response": []
+    },
+    {
+      "name": "[Error] Create User - Duplicate Email or Username",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"johndoe\",\n  \"full_name\": \"John Doe\",\n  \"email\": \"johndoe@example.com\",\n  \"password_hash\": \"$2b$10$examplehashedpassword\",\n  \"status_id\": 1\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/users",
+          "host": ["{{base_url}}"],
+          "path": ["api", "users"]
+        },
+        "description": "Expects 409 - User with this email or username already exists."
+      },
+      "response": []
+    },
+    {
+      "name": "[Error] Create User - Invalid status_id",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"ghostuser\",\n  \"full_name\": \"Ghost User\",\n  \"email\": \"ghost@example.com\",\n  \"password_hash\": \"$2b$10$examplehashedpassword\",\n  \"status_id\": 9999\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/users",
+          "host": ["{{base_url}}"],
+          "path": ["api", "users"]
+        },
+        "description": "Expects 400 - FK violation, status_id 9999 does not exist in the status table."
+      },
+      "response": []
+    },
+    {
+      "name": "[Error] Get User - Non-numeric ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/users/abc",
+          "host": ["{{base_url}}"],
+          "path": ["api", "users", "abc"]
+        },
+        "description": "Expects 400 - id must be a number."
+      },
+      "response": []
+    },
+    {
+      "name": "[Error] Get User - Not Found",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/users/999999",
+          "host": ["{{base_url}}"],
+          "path": ["api", "users", "999999"]
+        },
+        "description": "Expects 404 - User with this ID does not exist."
+      },
+      "response": []
+    }
+  ]
+}
