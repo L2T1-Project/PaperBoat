@@ -61,7 +61,11 @@ class CreateTables {
     createAllTables = async () => {
         try {
             const query = `
-            CREATE TABLE "user" (
+            Create table "status"(
+  id serial primary key,
+  status_name TEXT
+);
+CREATE TABLE "user" (
     id SERIAL PRIMARY KEY,
     username VARCHAR(100) UNIQUE NOT NULL,
     full_name VARCHAR(200) NOT NULL,
@@ -70,7 +74,7 @@ class CreateTables {
     jwt_token VARCHAR(2000),
     profile_pic_url VARCHAR(300),
     phone_number VARCHAR(20),
-    status VARCHAR(50),
+    status_id INTEGER NOT NULL REFERENCES status(id) on DELETE set null,
     created_at TIMESTAMP NOT NULL DEFAULT now(),
     bio TEXT
 );

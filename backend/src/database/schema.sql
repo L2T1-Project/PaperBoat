@@ -1,3 +1,7 @@
+Create table "status"(
+  id serial primary key,
+  status_name TEXT
+);
 CREATE TABLE "user" (
     id SERIAL PRIMARY KEY,
     username VARCHAR(100) UNIQUE NOT NULL,
@@ -7,26 +11,27 @@ CREATE TABLE "user" (
     jwt_token VARCHAR(2000),
     profile_pic_url VARCHAR(300),
     phone_number VARCHAR(20),
-    status VARCHAR(50),
+    status_id INTEGER NOT NULL REFERENCES status(id) on DELETE set null,
     created_at TIMESTAMP NOT NULL DEFAULT now(),
     bio TEXT
 );
 
-
-
+-- Follows table with constraints
 CREATE TABLE follows (
     following_user_id INTEGER NOT NULL,
     followed_user_id INTEGER NOT NULL,
     CONSTRAINT fk_following FOREIGN KEY (following_user_id) REFERENCES "user"(id) ON DELETE CASCADE,
     CONSTRAINT fk_followed FOREIGN KEY (followed_user_id) REFERENCES "user"(id) ON DELETE CASCADE,
-    CONSTRAINT follows_unique PRIMARY KEY (following_user_id, followed_user_id),
+    CONSTRAINT follows_unique UNIQUE (following_user_id, followed_user_id),
     CONSTRAINT follows_self_check CHECK (following_user_id <> followed_user_id)
 );
 
+-- Admin subtype table
 CREATE TABLE admin (
     user_id INTEGER PRIMARY KEY REFERENCES "user"(id) ON DELETE CASCADE
 );
 
+-- Institute table
 CREATE TABLE institute (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -35,6 +40,7 @@ CREATE TABLE institute (
     img_url VARCHAR(300)
 );
 
+-- Publisher table
 CREATE TABLE publisher (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -92,6 +98,7 @@ CREATE TABLE institute_history (
 );
 
 
+-- pdf_url ki not null dibo?
 CREATE TABLE paper (
     id SERIAL PRIMARY KEY,
     title VARCHAR(500) NOT NULL,
@@ -111,11 +118,13 @@ CREATE TABLE user_library (
 );
 
 
+-- DOMAIN
 CREATE TABLE domain (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL UNIQUE
 );
 
+-- FIELD (belongs to DOMAIN)
 CREATE TABLE field (
     id SERIAL PRIMARY KEY,
     domain_id INTEGER NOT NULL REFERENCES domain(id) ON DELETE CASCADE,
@@ -123,6 +132,7 @@ CREATE TABLE field (
     CONSTRAINT unique_field_per_domain UNIQUE (domain_id, name)
 );
 
+-- TOPIC (belongs to FIELD)
 CREATE TABLE topic (
     id SERIAL PRIMARY KEY,
     field_id INTEGER NOT NULL REFERENCES field(id) ON DELETE CASCADE,
@@ -142,12 +152,14 @@ CREATE TABLE paper_author (
     --CONSTRAINT unique_author_position_per_paper UNIQUE (paper_id, position)
 );
 
+-- PAPER_TOPIC: PAPER <-> TOPIC
 CREATE TABLE paper_topic (
     paper_id INTEGER NOT NULL REFERENCES paper(id) ON DELETE CASCADE,
     topic_id INTEGER NOT NULL REFERENCES topic(id) ON DELETE CASCADE,
     PRIMARY KEY (paper_id, topic_id)
 );
 
+-- CITATION: PAPER -> PAPER (directed)
 CREATE TABLE citation (
     citing_id INTEGER NOT NULL REFERENCES paper(id) ON DELETE CASCADE,
     cited_id INTEGER NOT NULL REFERENCES paper(id) ON DELETE CASCADE,
@@ -216,19 +228,21 @@ CREATE TABLE notification_receiver (
     user_id INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
     is_read BOOLEAN NOT NULL DEFAULT FALSE,
     PRIMARY KEY (notification_id, user_id)
-)
+);
 
+-- Subtype: User Notification - about a user
 CREATE TABLE user_notification (
     notification_id INTEGER PRIMARY KEY REFERENCES notification(id) ON DELETE CASCADE,
     triggered_user_id INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE
 );
 
+-- Subtype: Paper Notification
 CREATE TABLE paper_notification (
     notification_id INTEGER PRIMARY KEY REFERENCES notification(id) ON DELETE CASCADE,
     paper_id INTEGER NOT NULL REFERENCES paper(id) ON DELETE CASCADE
 );
 
-
+-- Subtype: Review Notification
 CREATE TABLE review_notification (
     notification_id INTEGER PRIMARY KEY REFERENCES notification(id) ON DELETE CASCADE,
     review_id INTEGER NOT NULL REFERENCES review(id) ON DELETE CASCADE
