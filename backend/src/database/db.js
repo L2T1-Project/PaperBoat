@@ -18,7 +18,7 @@ class DB_Connection{
         
         const connectionConfig = {
             connectionString: process.env.DATABASE_URL,
-            ssl: false
+            ssl: true
         };
 
         this.pool = new Pool(connectionConfig);
