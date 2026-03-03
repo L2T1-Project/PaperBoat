@@ -160,6 +160,106 @@ class UserModel {
         const result = await this.db.query_executor(query, params);
         return result.rows[0] || null;
     }
+
+
+    followUser = async (followingUserId, followedUserId) => {
+        const query = `
+            INSERT INTO follows (following_user_id, followed_user_id)
+            VALUES ($1, $2)
+            RETURNING following_user_id, followed_user_id;
+        `;
+        const params = [followingUserId, followedUserId];
+        const result = await this.db.query_executor(query, params);
+        return result.rows[0];
+    }
+
+    unfollowUser = async (followingUserId, followedUserId) => {
+        const query = `
+            DELETE FROM follows
+            WHERE following_user_id = $1 AND followed_user_id = $2
+            RETURNING following_user_id, followed_user_id;
+        `;
+        const params = [followingUserId, followedUserId];
+        const result = await this.db.query_executor(query, params);
+        return result.rows[0] || null;
+    }
+
+    getFollowers = async (userId) => {
+        const query = `
+            SELECT u.id, u.username, u.full_name, u.profile_pic_url
+            FROM follows f
+            JOIN "user" u ON u.id = f.following_user_id
+            WHERE f.followed_user_id = $1
+            ORDER BY u.username;
+        `;
+        const params = [userId];
+        const result = await this.db.query_executor(query, params);
+        return result.rows;
+    }
+
+    getFollowing = async (userId) => {
+        const query = `
+            SELECT u.id, u.username, u.full_name, u.profile_pic_url
+            FROM follows f
+            JOIN "user" u ON u.id = f.followed_user_id
+            WHERE f.following_user_id = $1
+            ORDER BY u.username;
+        `;
+        const params = [userId];
+        const result = await this.db.query_executor(query, params);
+        return result.rows;
+    }
+
+
+    getAllStatuses = async () => {
+        const query = `SELECT id, status_name FROM status ORDER BY id;`;
+        const result = await this.db.query_executor(query);
+        return result.rows;
+    }
+
+
+    addToUserLibrary = async (userId, paperId) => {
+        const query = `
+            INSERT INTO user_library (user_id, paper_id)
+            VALUES ($1, $2)
+            RETURNING user_id, paper_id, saved_at;
+        `;
+        const params = [userId, paperId];
+        const result = await this.db.query_executor(query, params);
+        return result.rows[0];
+    }
+
+    removeFromUserLibrary = async (userId, paperId) => {
+        const query = `
+            DELETE FROM user_library
+            WHERE user_id = $1 AND paper_id = $2
+            RETURNING user_id, paper_id;
+        `;
+        const params = [userId, paperId];
+        const result = await this.db.query_executor(query, params);
+        return result.rows[0] || null;
+    }
+
+    getUserLibrary = async (userId) => {
+        const query = `
+            SELECT
+                p.id,
+                p.title,
+                p.publication_date,
+                p.pdf_url,
+                p.doi,
+                ul.saved_at,
+                v.name AS venue_name
+            FROM user_library ul
+            JOIN paper p ON p.id = ul.paper_id
+            JOIN venue v ON v.id = p.venue_id
+            WHERE ul.user_id = $1
+            ORDER BY ul.saved_at DESC;
+        `;
+        const params = [userId];
+        const result = await this.db.query_executor(query, params);
+        return result.rows;
+    }
 }
 
 module.exports = UserModel;

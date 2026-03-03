@@ -170,10 +170,164 @@ class UserController {
             });
         }
     }
+
+
+    followUser = async (req, res) => {
+        try {
+            const { id } = req.params;         
+            const { followingUserId } = req.body;
+
+            if (isNaN(id) || !followingUserId || isNaN(followingUserId)) {
+                return res.status(400).json({ success: false, message: 'id (param) and followingUserId (body) must be numbers.' });
+            }
+
+            if (Number(id) === Number(followingUserId)) {
+                return res.status(400).json({ success: false, message: 'A user cannot follow themselves.' });
+            }
+
+            const follow = await this.userModel.followUser(Number(followingUserId), Number(id));
+
+            return res.status(201).json({ success: true, message: 'Followed successfully.', data: follow });
+        } catch (error) {
+            if (error.code === '23505') {
+                return res.status(409).json({ success: false, message: 'Already following this user.' });
+            }
+            if (error.code === '23503') {
+                return res.status(404).json({ success: false, message: 'User not found.' });
+            }
+            console.error('[followUser]', error.message);
+            return res.status(500).json({ success: false, message: 'Internal server error.' });
+        }
+    }
+
+    unfollowUser = async (req, res) => {
+        try {
+            const { id } = req.params;          
+            const { followingUserId } = req.body;
+
+            if (isNaN(id) || !followingUserId || isNaN(followingUserId)) {
+                return res.status(400).json({ success: false, message: 'id (param) and followingUserId (body) must be numbers.' });
+            }
+
+            const follow = await this.userModel.unfollowUser(Number(followingUserId), Number(id));
+
+            if (!follow) {
+                return res.status(404).json({ success: false, message: 'Follow relationship not found.' });
+            }
+
+            return res.status(200).json({ success: true, message: 'Unfollowed successfully.', data: follow });
+        } catch (error) {
+            console.error('[unfollowUser]', error.message);
+            return res.status(500).json({ success: false, message: 'Internal server error.' });
+        }
+    }
+
+    getFollowers = async (req, res) => {
+        try {
+            const { id } = req.params;
+
+            if (isNaN(id)) {
+                return res.status(400).json({ success: false, message: 'id must be a number.' });
+            }
+
+            const followers = await this.userModel.getFollowers(Number(id));
+            return res.status(200).json({ success: true, count: followers.length, data: followers });
+        } catch (error) {
+            console.error('[getFollowers]', error.message);
+            return res.status(500).json({ success: false, message: 'Internal server error.' });
+        }
+    }
+
+    getFollowing = async (req, res) => {
+        try {
+            const { id } = req.params;
+
+            if (isNaN(id)) {
+                return res.status(400).json({ success: false, message: 'id must be a number.' });
+            }
+
+            const following = await this.userModel.getFollowing(Number(id));
+            return res.status(200).json({ success: true, count: following.length, data: following });
+        } catch (error) {
+            console.error('[getFollowing]', error.message);
+            return res.status(500).json({ success: false, message: 'Internal server error.' });
+        }
+    }
+
+
+    getAllStatuses = async (req, res) => {
+        try {
+            const statuses = await this.userModel.getAllStatuses();
+            return res.status(200).json({ success: true, data: statuses });
+        } catch (error) {
+            console.error('[getAllStatuses]', error.message);
+            return res.status(500).json({ success: false, message: 'Internal server error.' });
+        }
+    }
+
+
+    addToUserLibrary = async (req, res) => {
+        try {
+            const { id } = req.params;     
+            const { paper_id } = req.body;
+
+            if (isNaN(id)) {
+                return res.status(400).json({ success: false, message: 'id must be a number.' });
+            }
+            if (!paper_id || isNaN(paper_id)) {
+                return res.status(400).json({ success: false, message: 'paper_id is required and must be a number.' });
+            }
+
+            const entry = await this.userModel.addToUserLibrary(Number(id), Number(paper_id));
+            return res.status(201).json({ success: true, message: 'Paper added to library.', data: entry });
+        } catch (error) {
+            if (error.code === '23505') {
+                return res.status(409).json({ success: false, message: 'Paper is already in this user\'s library.' });
+            }
+            if (error.code === '23503') {
+                return res.status(404).json({ success: false, message: 'User or paper not found.' });
+            }
+            console.error('[addToLibrary]', error.message);
+            return res.status(500).json({ success: false, message: 'Internal server error.' });
+        }
+    }
+
+    removeFromUserLibrary = async (req, res) => {
+        try {
+            const { id, paperId } = req.params;
+
+            if (isNaN(id) || isNaN(paperId)) {
+                return res.status(400).json({ success: false, message: 'id and paperId must be numbers.' });
+            }
+
+            const entry = await this.userModel.removeFromUserLibrary(Number(id), Number(paperId));
+
+            if (!entry) {
+                return res.status(404).json({ success: false, message: 'Paper not found in library.' });
+            }
+
+            return res.status(200).json({ success: true, message: 'Paper removed from library.', data: entry });
+        } catch (error) {
+            console.error('[removeFromLibrary]', error.message);
+            return res.status(500).json({ success: false, message: 'Internal server error.' });
+        }
+    }
+
+    getUserLibrary = async (req, res) => {
+        try {
+            const { id } = req.params;
+
+            if (isNaN(id)) {
+                return res.status(400).json({ success: false, message: 'id must be a number.' });
+            }
+
+            const library = await this.userModel.getUserLibrary(Number(id));
+            return res.status(200).json({ success: true, count: library.length, data: library });
+        } catch (error) {
+            console.error('[getUserLibrary]', error.message);
+            return res.status(500).json({ success: false, message: 'Internal server error.' });
+        }
+    }
 }
 
 module.exports = UserController;
-
-
-//random thing
-//random cmnt
