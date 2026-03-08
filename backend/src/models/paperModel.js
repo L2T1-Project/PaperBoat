@@ -188,8 +188,10 @@ class PaperModel {
         return result.rows[0] || null;
     }
 
+    //paper topic er name ta inconsistent - change korte hobe
+    //LEFT TO DO
 
-    getTopics = async (paperId) => {
+    getPaperTopics = async (paperId) => {
         const query = `
             SELECT t.id, t.name AS topic_name,
                    f.id AS field_id, f.name AS field_name,
@@ -206,7 +208,7 @@ class PaperModel {
         return result.rows;
     }
 
-    addTopic = async (paperId, topicId) => {
+    addPaperTopic = async (paperId, topicId) => {
         const query = `
             INSERT INTO paper_topic (paper_id, topic_id)
             VALUES ($1, $2)
@@ -217,7 +219,7 @@ class PaperModel {
         return result.rows[0];
     }
 
-    removeTopic = async (paperId, topicId) => {
+    removePaperTopic = async (paperId, topicId) => {
         const query = `
             DELETE FROM paper_topic
             WHERE paper_id = $1 AND topic_id = $2

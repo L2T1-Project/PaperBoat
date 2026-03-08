@@ -78,11 +78,11 @@ class ResearcherModel {
     }
 
 
-    createClaim = async (researcherId, paperId, position) => {
+    createPaperClaim = async (researcherId, paperId, position) => {
         const query = `
-            INSERT INTO paper_claim (researcher_id, paper_id, position)
-            VALUES ($1, $2, $3)
-            RETURNING researcher_id, paper_id, position, is_approved, claimed_at;
+            INSERT INTO paper_claim (researcher_id, paper_id, position, status_id)
+            VALUES ($1, $2, $3, (SELECT id FROM status WHERE status_name = 'Pending'))
+            RETURNING researcher_id, paper_id, position, status_id, claimed_at;
         `;
 
         const params = [researcherId, paperId, position];
@@ -90,16 +90,17 @@ class ResearcherModel {
         return result.rows[0];
     }
 
-    getClaimsByResearcher = async (researcherId) => {
+    getPaperClaimsByResearcher = async (researcherId) => {
         const query = `
             SELECT
                 pc.paper_id,
                 p.title,
                 pc.position,
-                pc.is_approved,
+                s.status_name AS claim_status,
                 pc.claimed_at
             FROM paper_claim pc
-            JOIN paper p ON p.id = pc.paper_id
+            JOIN paper p  ON p.id = pc.paper_id
+            JOIN status s ON s.id = pc.status_id
             WHERE pc.researcher_id = $1
             ORDER BY pc.claimed_at DESC;
         `;
@@ -109,7 +110,7 @@ class ResearcherModel {
         return result.rows;
     }
 
-    deleteClaim = async (researcherId, paperId) => {
+    deletePaperClaim = async (researcherId, paperId) => {
         const query = `
             DELETE FROM paper_claim
             WHERE researcher_id = $1 AND paper_id = $2

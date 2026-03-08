@@ -17,6 +17,7 @@ const VenueRouter = require('./routes/venueRoutes.js');
 const VenueUserRouter = require('./routes/venueUserRoutes.js');
 const TopicRouter = require('./routes/topicRoutes.js');
 const ReviewRouter = require('./routes/reviewRoutes.js');
+const NotificationRouter = require('./routes/notificationRoutes.js');
 
 const app = express();
 app.use(express.json());
@@ -56,6 +57,9 @@ app.use('/api/topics', topicRouter.getRouter());
 
 const reviewRouter = new ReviewRouter();
 app.use('/api/reviews', reviewRouter.getRouter());
+
+const notificationRouter = new NotificationRouter();
+app.use('/api/notifications', notificationRouter.getRouter());
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

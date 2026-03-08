@@ -20,9 +20,12 @@ class PaperRouter {
         this.router.post('/:id/citations',               this.PaperController.addCitation);
         this.router.delete('/:id/citations/:citedId',    this.PaperController.removeCitation);
 
-        this.router.get('/:id/topics',                   this.PaperController.getTopics);
-        this.router.post('/:id/topics',                  this.PaperController.addTopic);
-        this.router.delete('/:id/topics/:topicId',       this.PaperController.removeTopic);
+        
+        //change the paper topic routes
+
+        this.router.get('/:id/topics',                   this.PaperController.getPaperTopics);
+        this.router.post('/:id/topics',                  this.PaperController.addPaperTopic);
+        this.router.delete('/:id/topics/:topicId',       this.PaperController.removePaperTopic);
     }
 
     getRouter() {

@@ -216,8 +216,9 @@ class PaperController {
         }
     }
 
+    //I have to change the name of the paper_topic functions
 
-    getTopics = async (req, res) => {
+    getPaperTopics = async (req, res) => {
         try {
             const { id } = req.params;
 
@@ -225,7 +226,7 @@ class PaperController {
                 return res.status(400).json({ success: false, message: 'id must be a number.' });
             }
 
-            const topics = await this.paperModel.getTopics(Number(id));
+            const topics = await this.paperModel.getPaperTopics(Number(id));
             return res.status(200).json({ success: true, count: topics.length, data: topics });
         } catch (error) {
             console.error('[getTopics]', error.message);
@@ -233,7 +234,7 @@ class PaperController {
         }
     }
 
-    addTopic = async (req, res) => {
+    addPaperTopic = async (req, res) => {
         try {
             const { id } = req.params;     // paper id
             const { topic_id } = req.body;
@@ -245,7 +246,7 @@ class PaperController {
                 return res.status(400).json({ success: false, message: 'topic_id is required and must be a number.' });
             }
 
-            const entry = await this.paperModel.addTopic(Number(id), Number(topic_id));
+            const entry = await this.paperModel.addPaperTopic(Number(id), Number(topic_id));
             return res.status(201).json({ success: true, message: 'Topic added to paper.', data: entry });
         } catch (error) {
             if (error.code === '23505') {
@@ -259,7 +260,7 @@ class PaperController {
         }
     }
 
-    removeTopic = async (req, res) => {
+    removePaperTopic = async (req, res) => {
         try {
             const { id, topicId } = req.params;
 
@@ -267,7 +268,7 @@ class PaperController {
                 return res.status(400).json({ success: false, message: 'id and topicId must be numbers.' });
             }
 
-            const entry = await this.paperModel.removeTopic(Number(id), Number(topicId));
+            const entry = await this.paperModel.removePaperTopic(Number(id), Number(topicId));
 
             if (!entry) {
                 return res.status(404).json({ success: false, message: 'Topic not linked to this paper.' });

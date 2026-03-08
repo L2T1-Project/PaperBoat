@@ -328,6 +328,83 @@ class UserController {
             return res.status(500).json({ success: false, message: 'Internal server error.' });
         }
     }
+
+
+    createFeedback = async (req, res) => {
+        try {
+            const { sender_id, receiver_id, message } = req.body;
+
+            if (!sender_id || isNaN(sender_id) || !receiver_id || isNaN(receiver_id) || !message) {
+                return res.status(400).json({ success: false, message: 'sender_id, receiver_id, and message are required.' });
+            }
+
+            if (Number(sender_id) === Number(receiver_id)) {
+                return res.status(400).json({ success: false, message: 'A user cannot send feedback to themselves.' });
+            }
+
+            const feedback = await this.userModel.createFeedback(Number(sender_id), Number(receiver_id), message);
+            return res.status(201).json({ success: true, message: 'Feedback sent.', data: feedback });
+        } catch (error) {
+            if (error.code === '23503') return res.status(400).json({ success: false, message: 'Sender or receiver not found.' });
+            if (error.code === '23514') return res.status(400).json({ success: false, message: 'A user cannot send feedback to themselves.' });
+            console.error('[createFeedback]', error.message);
+            return res.status(500).json({ success: false, message: 'Internal server error.' });
+        }
+    }
+
+    getFeedbackById = async (req, res) => {
+        try {
+            const { id } = req.params;
+            if (isNaN(id)) return res.status(400).json({ success: false, message: 'id must be a number.' });
+
+            const feedback = await this.userModel.getFeedbackById(Number(id));
+            if (!feedback) return res.status(404).json({ success: false, message: `Feedback with id ${id} not found.` });
+            return res.status(200).json({ success: true, data: feedback });
+        } catch (error) {
+            console.error('[getFeedbackById]', error.message);
+            return res.status(500).json({ success: false, message: 'Internal server error.' });
+        }
+    }
+
+    getFeedbackBySender = async (req, res) => {
+        try {
+            const { id } = req.params;
+            if (isNaN(id)) return res.status(400).json({ success: false, message: 'id must be a number.' });
+
+            const feedbacks = await this.userModel.getFeedbackBySender(Number(id));
+            return res.status(200).json({ success: true, count: feedbacks.length, data: feedbacks });
+        } catch (error) {
+            console.error('[getFeedbackBySender]', error.message);
+            return res.status(500).json({ success: false, message: 'Internal server error.' });
+        }
+    }
+
+    getFeedbackByReceiver = async (req, res) => {
+        try {
+            const { id } = req.params;
+            if (isNaN(id)) return res.status(400).json({ success: false, message: 'id must be a number.' });
+
+            const feedbacks = await this.userModel.getFeedbackByReceiver(Number(id));
+            return res.status(200).json({ success: true, count: feedbacks.length, data: feedbacks });
+        } catch (error) {
+            console.error('[getFeedbackByReceiver]', error.message);
+            return res.status(500).json({ success: false, message: 'Internal server error.' });
+        }
+    }
+
+    deleteFeedback = async (req, res) => {
+        try {
+            const { id } = req.params;
+            if (isNaN(id)) return res.status(400).json({ success: false, message: 'id must be a number.' });
+
+            const removed = await this.userModel.deleteFeedback(Number(id));
+            if (!removed) return res.status(404).json({ success: false, message: `Feedback with id ${id} not found.` });
+            return res.status(200).json({ success: true, message: 'Feedback deleted.', data: removed });
+        } catch (error) {
+            console.error('[deleteFeedback]', error.message);
+            return res.status(500).json({ success: false, message: 'Internal server error.' });
+        }
+    }
 }
 
 module.exports = UserController;

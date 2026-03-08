@@ -58,6 +58,55 @@ class AdminController {
             return res.status(500).json({ error: 'Internal server error' });
         }
     }
+
+
+    getAllPaperClaims = async (req, res) => {
+        try {
+            const claims = await this.adminModel.getAllPaperClaims();
+            return res.status(200).json({ success: true, count: claims.length, data: claims });
+        } catch (err) {
+            console.error('AdminController.getAllClaims:', err);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+    }
+
+    getPaperClaimsByStatus = async (req, res) => {
+        try {
+            const { status } = req.params;
+            const claims = await this.adminModel.getPaperClaimsByStatus(status);
+            return res.status(200).json({ success: true, count: claims.length, data: claims });
+        } catch (err) {
+            console.error('AdminController.getClaimsByStatus:', err);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+    }
+
+    updatePaperClaimStatus = async (req, res) => {
+        try {
+            const { researcherId, paperId } = req.params;
+            const { status_id } = req.body;
+
+            if (isNaN(researcherId) || isNaN(paperId)) {
+                return res.status(400).json({ error: 'researcherId and paperId must be numbers.' });
+            }
+            if (!status_id || isNaN(status_id)) {
+                return res.status(400).json({ error: 'status_id is required and must be a number.' });
+            }
+
+            const claim = await this.adminModel.updatePaperClaimStatus(
+                Number(researcherId),
+                Number(paperId),
+                Number(status_id)
+            );
+
+            if (!claim) return res.status(404).json({ error: 'Paper claim not found.' });
+            return res.status(200).json({ success: true, message: 'Claim status updated.', data: claim });
+        } catch (err) {
+            if (err.code === '23503') return res.status(400).json({ error: 'status_id does not exist in the status table.' });
+            console.error('AdminController.updateClaimStatus:', err);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+    }
 }
 
 module.exports = AdminController;

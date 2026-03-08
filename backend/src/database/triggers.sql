@@ -1,86 +1,93 @@
--- Function to handle claim approval
-CREATE OR REPLACE FUNCTION approve_claim()
-RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION trg_fn_approve_claim()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
 DECLARE
-    auth_id INTEGER;
+    approved_status_id INTEGER;
 BEGIN
-    -- Only act when claim is approved
-    IF NEW.is_approved = TRUE THEN
-        -- Get the author_id linked to this researcher
-        SELECT author_id INTO auth_id
-        FROM researcher
-        WHERE user_id = NEW.researcher_id;
+    SELECT id INTO approved_status_id FROM status WHERE status_name = 'approved';
 
-        -- Insert into paper_author using the claimed position
-        INSERT INTO paper_author (paper_id, author_id, position)
-        VALUES (NEW.paper_id, auth_id, NEW.position);
-
-        -- Delete the claim row (since it has been resolved)
-        DELETE FROM paper_claim
-        WHERE researcher_id = NEW.researcher_id
-          AND paper_id = NEW.paper_id;
+    IF NEW.status_id = approved_status_id AND OLD.status_id IS DISTINCT FROM NEW.status_id THEN
+        CALL approve_paper_claim(NEW.researcher_id, NEW.paper_id, NEW.position);
     END IF;
 
-    -- Return NULL because the claim row is removed
-    RETURN NULL;
+    RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
--- Trigger that fires after claim approval
-CREATE TRIGGER claim_approval_trigger
-AFTER UPDATE OF is_approved ON paper_claim
+CREATE TRIGGER trg_approve_claim
+AFTER UPDATE ON paper_claim
 FOR EACH ROW
-WHEN (NEW.is_approved = TRUE)
-EXECUTE FUNCTION approve_claim();
+EXECUTE FUNCTION trg_fn_approve_claim();
 
 
---write triggers for follow, review, paper notification sending
 
--- Function for user_notification child -> parent delete
-CREATE OR REPLACE FUNCTION delete_notification_from_user()
-RETURNS TRIGGER AS $$
+
+CREATE OR REPLACE FUNCTION trg_fn_notify_follow()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
 BEGIN
-    DELETE FROM notification WHERE id = OLD.notification_id;
-    RETURN OLD;
+    CALL notify_new_follower(NEW.following_user_id, NEW.followed_user_id);
+    RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
--- Function for paper_notification child -> parent delete
-CREATE OR REPLACE FUNCTION delete_notification_from_paper()
-RETURNS TRIGGER AS $$
+CREATE TRIGGER trg_notify_follow
+AFTER INSERT ON follows
+FOR EACH ROW
+EXECUTE FUNCTION trg_fn_notify_follow();
+
+
+-- paper_review er trigger
+CREATE OR REPLACE FUNCTION trg_paper_notify_review()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
 BEGIN
-    DELETE FROM notification WHERE id = OLD.notification_id;
-    RETURN OLD;
+    IF NEW.paper_id IS NOT NULL THEN
+        CALL notify_paper_review(NEW.id, NEW.paper_id);
+    END IF;
+    RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
--- Function for review_notification child -> parent delete
-CREATE OR REPLACE FUNCTION delete_notification_from_review()
-RETURNS TRIGGER AS $$
+
+CREATE TRIGGER trg_notify_review
+AFTER INSERT ON review
+FOR EACH ROW
+EXECUTE FUNCTION trg_fn_notify_review();
+
+
+-- review vote proc er
+CREATE OR REPLACE FUNCTION trg_fn_notify_vote()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
 BEGIN
-    DELETE FROM notification WHERE id = OLD.notification_id;
-    RETURN OLD;
+    CALL notify_review_vote(NEW.review_id, NEW.is_upvote, NEW.researcher_id);
+    RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
-
--- Trigger on user_notification
-CREATE TRIGGER user_notification_delete_trigger
-AFTER DELETE ON user_notification
+CREATE TRIGGER trg_notify_vote
+AFTER INSERT ON review_vote
 FOR EACH ROW
-EXECUTE FUNCTION delete_notification_from_user();
+EXECUTE FUNCTION trg_fn_notify_vote();
 
--- Trigger on paper_notification
-CREATE TRIGGER paper_notification_delete_trigger
-AFTER DELETE ON paper_notification
+
+-- admin er claim notification jabe, etar trigger ta
+CREATE OR REPLACE FUNCTION trg_fn_notify_claim()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    CALL notify_new_claim(NEW.researcher_id, NEW.paper_id);
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_notify_claim
+AFTER INSERT ON paper_claim
 FOR EACH ROW
-EXECUTE FUNCTION delete_notification_from_paper();
-
--- Trigger on review_notification
-CREATE TRIGGER review_notification_delete_trigger
-AFTER DELETE ON review_notification
-FOR EACH ROW
-EXECUTE FUNCTION delete_notification_from_review();
-
-
--- write similiar trigger for user -> researcher, venue_user subtype
+EXECUTE FUNCTION trg_fn_notify_claim();

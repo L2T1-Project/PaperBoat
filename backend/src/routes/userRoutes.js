@@ -25,6 +25,12 @@ class UserRouter {
         this.router.get('/:id/library',              this.userController.getUserLibrary);
         this.router.post('/:id/library',             this.userController.addToUserLibrary);
         this.router.delete('/:id/library/:paperId',  this.userController.removeFromUserLibrary);
+
+        this.router.get('/feedback/:id',             this.userController.getFeedbackById);
+        this.router.post('/feedback',                this.userController.createFeedback);
+        this.router.get('/:id/feedback/sent',        this.userController.getFeedbackBySender);
+        this.router.get('/:id/feedback/received',    this.userController.getFeedbackByReceiver);
+        this.router.delete('/feedback/:id',          this.userController.deleteFeedback);
     }
 
     getRouter() {

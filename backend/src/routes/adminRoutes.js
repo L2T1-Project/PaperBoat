@@ -14,6 +14,11 @@ class AdminRouter {
     #initRoutes() {
         this.#router.post('/',     this.#controller.promoteUser);
         this.#router.get('/',      this.#controller.getAllAdmins);
+
+        this.#router.get('/claims',                                    this.#controller.getAllPaperClaims);
+        this.#router.get('/claims/:status',                            this.#controller.getPaperClaimsByStatus);
+        this.#router.patch('/claims/:researcherId/:paperId',           this.#controller.updatePaperClaimStatus);
+
         this.#router.get('/:id',   this.#controller.getAdminById);
         this.#router.delete('/:id',this.#controller.demoteAdmin);
     }

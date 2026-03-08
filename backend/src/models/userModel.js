@@ -260,6 +260,70 @@ class UserModel {
         const result = await this.db.query_executor(query, params);
         return result.rows;
     }
+
+
+    createFeedback = async (senderId, receiverId, message) => {
+        const query = `
+            INSERT INTO feedback (sender_id, receiver_id, message)
+            VALUES ($1, $2, $3)
+            RETURNING *;
+        `;
+        const result = await this.db.query_executor(query, [senderId, receiverId, message]);
+        return result.rows[0];
+    }
+
+    getFeedbackById = async (feedbackId) => {
+        const query = `
+            SELECT
+                f.*,
+                s.username AS sender_username,
+                s.full_name AS sender_full_name,
+                r.username AS receiver_username,
+                r.full_name AS receiver_full_name
+            FROM feedback f
+            JOIN "user" s ON s.id = f.sender_id
+            JOIN "user" r ON r.id = f.receiver_id
+            WHERE f.id = $1;
+        `;
+        const result = await this.db.query_executor(query, [feedbackId]);
+        return result.rows[0] || null;
+    }
+
+    getFeedbackBySender = async (senderId) => {
+        const query = `
+            SELECT
+                f.*,
+                r.username AS receiver_username,
+                r.full_name AS receiver_full_name
+            FROM feedback f
+            JOIN "user" r ON r.id = f.receiver_id
+            WHERE f.sender_id = $1
+            ORDER BY f.created_at DESC;
+        `;
+        const result = await this.db.query_executor(query, [senderId]);
+        return result.rows;
+    }
+
+    getFeedbackByReceiver = async (receiverId) => {
+        const query = `
+            SELECT
+                f.*,
+                s.username AS sender_username,
+                s.full_name AS sender_full_name
+            FROM feedback f
+            JOIN "user" s ON s.id = f.sender_id
+            WHERE f.receiver_id = $1
+            ORDER BY f.created_at DESC;
+        `;
+        const result = await this.db.query_executor(query, [receiverId]);
+        return result.rows;
+    }
+
+    deleteFeedback = async (feedbackId) => {
+        const query = `DELETE FROM feedback WHERE id = $1 RETURNING id;`;
+        const result = await this.db.query_executor(query, [feedbackId]);
+        return result.rows[0] || null;
+    }
 }
 
 module.exports = UserModel;

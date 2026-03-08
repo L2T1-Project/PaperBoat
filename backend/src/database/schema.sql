@@ -195,12 +195,11 @@ CREATE TABLE review_vote (
     PRIMARY KEY (researcher_id, review_id)
 );
 
-
 CREATE TABLE paper_claim (
     researcher_id INTEGER NOT NULL REFERENCES researcher(user_id) ON DELETE CASCADE,
     paper_id INTEGER NOT NULL REFERENCES paper(id) ON DELETE CASCADE,
     position INTEGER NOT NULL CHECK (position > 0),
-    is_approved BOOLEAN NOT NULL DEFAULT FALSE,
+    status_id INTEGER NOT NULL REFERENCES status(id),
     claimed_at TIMESTAMP NOT NULL DEFAULT now(),
     PRIMARY KEY (researcher_id, paper_id)
 );

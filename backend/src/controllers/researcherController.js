@@ -107,9 +107,8 @@ class ResearcherController {
         }
     }
 
-    // ── PAPER_CLAIM ────────────────────────────────────────────────────────────
 
-    createClaim = async (req, res) => {
+    createPaperClaim = async (req, res) => {
         try {
             const { id } = req.params;      // researcher user_id
             const { paper_id, position } = req.body;
@@ -124,7 +123,7 @@ class ResearcherController {
                 return res.status(400).json({ success: false, message: 'position is required and must be a positive integer.' });
             }
 
-            const claim = await this.researcherModel.createClaim(Number(id), Number(paper_id), Number(position));
+            const claim = await this.researcherModel.createPaperClaim(Number(id), Number(paper_id), Number(position));
 
             return res.status(201).json({
                 success: true,
@@ -143,7 +142,7 @@ class ResearcherController {
         }
     }
 
-    getClaimsByResearcher = async (req, res) => {
+    getPaperClaimsByResearcher = async (req, res) => {
         try {
             const { id } = req.params;
 
@@ -151,7 +150,7 @@ class ResearcherController {
                 return res.status(400).json({ success: false, message: 'id must be a number.' });
             }
 
-            const claims = await this.researcherModel.getClaimsByResearcher(Number(id));
+            const claims = await this.researcherModel.getPaperClaimsByResearcher(Number(id));
             return res.status(200).json({ success: true, count: claims.length, data: claims });
         } catch (error) {
             console.error('[getClaimsByResearcher]', error.message);
@@ -159,7 +158,7 @@ class ResearcherController {
         }
     }
 
-    deleteClaim = async (req, res) => {
+    deletePaperClaim = async (req, res) => {
         try {
             const { id, paperId } = req.params;
 
@@ -167,7 +166,7 @@ class ResearcherController {
                 return res.status(400).json({ success: false, message: 'id and paperId must be numbers.' });
             }
 
-            const claim = await this.researcherModel.deleteClaim(Number(id), Number(paperId));
+            const claim = await this.researcherModel.deletePaperClaim(Number(id), Number(paperId));
 
             if (!claim) {
                 return res.status(404).json({ success: false, message: 'Claim not found.' });
@@ -180,7 +179,6 @@ class ResearcherController {
         }
     }
 
-    // ── INSTITUTE_HISTORY ──────────────────────────────────────────────────────
 
     addInstituteHistory = async (req, res) => {
         try {
