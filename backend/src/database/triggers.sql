@@ -5,7 +5,7 @@ AS $$
 DECLARE
     approved_status_id INTEGER;
 BEGIN
-    SELECT id INTO approved_status_id FROM status WHERE status_name = 'approved';
+    SELECT id INTO approved_status_id FROM status WHERE status_name = 'Approved';
 
     IF NEW.status_id = approved_status_id AND OLD.status_id IS DISTINCT FROM NEW.status_id THEN
         CALL approve_paper_claim(NEW.researcher_id, NEW.paper_id, NEW.position);

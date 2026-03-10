@@ -45,8 +45,8 @@ STABLE
 AS $$
 DECLARE
     linked_author_id INTEGER;
-    total            INTEGER := 0;
-    curr_paper_id    INTEGER;
+    total INTEGER := 0;
+    curr_paper_id INTEGER;
 BEGIN
     linked_author_id := get_author_id(researcher_user_id);
 
@@ -73,13 +73,13 @@ STABLE
 AS $$
 DECLARE
     linked_author_id INTEGER;
-    h                INTEGER := 0;
-    rank             INTEGER := 0;
-    cite_count       INTEGER;
+    h INTEGER := 0;
+    rank INTEGER := 0;
+    cite_count INTEGER;
 BEGIN
     linked_author_id := get_author_id(researcher_user_id);
 
-    -- Walk papers from most-cited to least-cited
+    -- cite count wise desc sorting
     FOR cite_count IN
         SELECT get_paper_citation_count(pa.paper_id) AS c
         FROM paper_author pa
