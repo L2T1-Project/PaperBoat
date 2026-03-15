@@ -1,27 +1,54 @@
-const express = require('express');
-const dotenv = require('dotenv');
-const path = require('path');
-const cors = require('cors');
+const express = require("express");
+const dotenv = require("dotenv");
+const path = require("path");
+const cors = require("cors");
+const AuthenticateToken = require("./middlewares/authenticateToken.js");
 
 //cors = cross origin resource sharing
 
-dotenv.config({path: path.resolve(__dirname, '../.env')});
-const CreateTables = require('./models/createTables.js');
-const UserRouter = require('./routes/userRoutes.js');
-const PaperRouter = require('./routes/paperRoutes.js');
-const AuthorRouter = require('./routes/authorRoutes.js');
-const InstituteRouter = require('./routes/instituteRoutes.js');
-const ResearcherRouter = require('./routes/researcherRoutes.js');
-const AdminRouter = require('./routes/adminRoutes.js');
-const VenueRouter = require('./routes/venueRoutes.js');
-const VenueUserRouter = require('./routes/venueUserRoutes.js');
-const TopicRouter = require('./routes/topicRoutes.js');
-const ReviewRouter = require('./routes/reviewRoutes.js');
-const NotificationRouter = require('./routes/notificationRoutes.js');
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
+const CreateTables = require("./models/createTables.js");
+const UserRouter = require("./routes/userRoutes.js");
+const PaperRouter = require("./routes/paperRoutes.js");
+const AuthorRouter = require("./routes/authorRoutes.js");
+const InstituteRouter = require("./routes/instituteRoutes.js");
+const ResearcherRouter = require("./routes/researcherRoutes.js");
+const AdminRouter = require("./routes/adminRoutes.js");
+const VenueRouter = require("./routes/venueRoutes.js");
+const VenueUserRouter = require("./routes/venueUserRoutes.js");
+const TopicRouter = require("./routes/topicRoutes.js");
+const ReviewRouter = require("./routes/reviewRoutes.js");
+const NotificationRouter = require("./routes/notificationRoutes.js");
 
 const app = express();
 app.use(express.json());
 app.use(cors());
+
+const authInstance = new AuthenticateToken();
+const publicRoutes = [
+  { method: "POST", path: "/api/users/login" },
+  { method: "POST", path: "/api/users" },
+  { method: "GET", path: "/api/users/statuses" },
+  { method: "GET", path: "/api/users/status/all" },
+  { method: "GET", path: "/api/authors/lookup/orc-id" },
+  { method: "GET", path: "/api/authors/lookup/name" },
+  { method: "POST", path: "/api/researchers" },
+  { method: "GET", path: "/api/venues/lookup/issn" },
+  { method: "GET", path: "/api/venues/lookup/name" },
+  { method: "POST", path: "/api/venue-users" },
+];
+
+app.use((req, res, next) => {
+  const isPublic = publicRoutes.some(
+    (route) => route.method === req.method && route.path === req.path,
+  );
+
+  if (isPublic) {
+    return next();
+  }
+
+  return authInstance.authenticateToken(req, res, next);
+});
 
 // Tables have been created like this, will create a new route later
 const check = new CreateTables();
@@ -29,41 +56,41 @@ const check = new CreateTables();
 
 // Routes
 const userRouter = new UserRouter();
-app.use('/api/users', userRouter.getRouter());
+app.use("/api/users", userRouter.getRouter());
 
 const paperRouter = new PaperRouter();
-app.use('/api/papers', paperRouter.getRouter());
+app.use("/api/papers", paperRouter.getRouter());
 
 const authorRouter = new AuthorRouter();
-app.use('/api/authors', authorRouter.getRouter());
+app.use("/api/authors", authorRouter.getRouter());
 
 const instituteRouter = new InstituteRouter();
-app.use('/api/institutes', instituteRouter.getRouter());
+app.use("/api/institutes", instituteRouter.getRouter());
 
 const researcherRouter = new ResearcherRouter();
-app.use('/api/researchers', researcherRouter.getRouter());
+app.use("/api/researchers", researcherRouter.getRouter());
 
 const adminRouter = new AdminRouter();
-app.use('/api/admin', adminRouter.getRouter());
+app.use("/api/admin", adminRouter.getRouter());
 
 const venueRouter = new VenueRouter();
-app.use('/api/venues', venueRouter.getRouter());
+app.use("/api/venues", venueRouter.getRouter());
 
 const venueUserRouter = new VenueUserRouter();
-app.use('/api/venue-users', venueUserRouter.getRouter());
+app.use("/api/venue-users", venueUserRouter.getRouter());
 
 const topicRouter = new TopicRouter();
-app.use('/api/topics', topicRouter.getRouter());
+app.use("/api/topics", topicRouter.getRouter());
 
 const reviewRouter = new ReviewRouter();
-app.use('/api/reviews', reviewRouter.getRouter());
+app.use("/api/reviews", reviewRouter.getRouter());
 
 const notificationRouter = new NotificationRouter();
-app.use('/api/notifications', notificationRouter.getRouter());
+app.use("/api/notifications", notificationRouter.getRouter());
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
 
 //console.log(process.env.DATABASE_URL);

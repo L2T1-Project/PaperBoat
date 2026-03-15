@@ -1,46 +1,45 @@
-const DB_Connection = require('../database/db.js');
+const DB_Connection = require("../database/db.js");
 
 class VenueModel {
-    constructor() {
-        this.db = DB_Connection.getInstance();
-    }
+  constructor() {
+    this.db = DB_Connection.getInstance();
+  }
 
-
-    createPublisher = async (name, country, website) => {
-        const query = `
+  createPublisher = async (name, country, website) => {
+    const query = `
             INSERT INTO publisher (name, country, website)
             VALUES ($1, $2, $3)
             RETURNING *;
         `;
 
-        const params = [name, country, website];
-        const result = await this.db.query_executor(query, params);
-        return result.rows[0];
-    }
+    const params = [name, country, website];
+    const result = await this.db.query_executor(query, params);
+    return result.rows[0];
+  };
 
-    getAllPublishers = async () => {
-        const query = `
+  getAllPublishers = async () => {
+    const query = `
             SELECT * FROM publisher
             ORDER BY name;
         `;
 
-        const result = await this.db.query_executor(query);
-        return result.rows;
-    }
+    const result = await this.db.query_executor(query);
+    return result.rows;
+  };
 
-    getPublisherById = async (publisherId) => {
-        const query = `
+  getPublisherById = async (publisherId) => {
+    const query = `
             SELECT * FROM publisher
             WHERE id = $1;
         `;
 
-        const params = [publisherId];
-        const result = await this.db.query_executor(query, params);
-        return result.rows[0] || null;
-    }
+    const params = [publisherId];
+    const result = await this.db.query_executor(query, params);
+    return result.rows[0] || null;
+  };
 
-    updatePublisher = async (publisherId, name, country, website) => {
-        const query = `
+  updatePublisher = async (publisherId, name, country, website) => {
+    const query = `
             UPDATE publisher
             SET
                 name      = COALESCE($2, name),
@@ -50,38 +49,37 @@ class VenueModel {
             RETURNING *;
         `;
 
-        const params = [publisherId, name, country, website];
-        const result = await this.db.query_executor(query, params);
-        return result.rows[0] || null;
-    }
+    const params = [publisherId, name, country, website];
+    const result = await this.db.query_executor(query, params);
+    return result.rows[0] || null;
+  };
 
-    deletePublisher = async (publisherId) => {
-        const query = `
+  deletePublisher = async (publisherId) => {
+    const query = `
             DELETE FROM publisher
             WHERE id = $1
             RETURNING id;
         `;
 
-        const params = [publisherId];
-        const result = await this.db.query_executor(query, params);
-        return result.rows[0] || null;
-    }
+    const params = [publisherId];
+    const result = await this.db.query_executor(query, params);
+    return result.rows[0] || null;
+  };
 
-
-    createVenue = async (name, type, issn, publisherId) => {
-        const query = `
+  createVenue = async (name, type, issn, publisherId) => {
+    const query = `
             INSERT INTO venue (name, type, issn, publisher_id)
             VALUES ($1, $2, $3, $4)
             RETURNING *;
         `;
 
-        const params = [name, type, issn, publisherId];
-        const result = await this.db.query_executor(query, params);
-        return result.rows[0];
-    }
+    const params = [name, type, issn, publisherId];
+    const result = await this.db.query_executor(query, params);
+    return result.rows[0];
+  };
 
-    getAllVenues = async () => {
-        const query = `
+  getAllVenues = async () => {
+    const query = `
             SELECT
                 v.*,
                 p.name       AS publisher_name,
@@ -92,12 +90,12 @@ class VenueModel {
             ORDER BY v.name;
         `;
 
-        const result = await this.db.query_executor(query);
-        return result.rows;
-    }
+    const result = await this.db.query_executor(query);
+    return result.rows;
+  };
 
-    getVenueById = async (venueId) => {
-        const query = `
+  getVenueById = async (venueId) => {
+    const query = `
             SELECT
                 v.*,
                 p.name       AS publisher_name,
@@ -108,13 +106,13 @@ class VenueModel {
             WHERE v.id = $1;
         `;
 
-        const params = [venueId];
-        const result = await this.db.query_executor(query, params);
-        return result.rows[0] || null;
-    }
+    const params = [venueId];
+    const result = await this.db.query_executor(query, params);
+    return result.rows[0] || null;
+  };
 
-    updateVenue = async (venueId, name, type, issn, publisherId) => {
-        const query = `
+  updateVenue = async (venueId, name, type, issn, publisherId) => {
+    const query = `
             UPDATE venue
             SET
                 name         = COALESCE($2, name),
@@ -125,27 +123,26 @@ class VenueModel {
             RETURNING *;
         `;
 
-        const params = [venueId, name, type, issn, publisherId];
-        const result = await this.db.query_executor(query, params);
-        return result.rows[0] || null;
-    }
+    const params = [venueId, name, type, issn, publisherId];
+    const result = await this.db.query_executor(query, params);
+    return result.rows[0] || null;
+  };
 
-    deleteVenue = async (venueId) => {
-        const query = `
+  deleteVenue = async (venueId) => {
+    const query = `
             DELETE FROM venue
             WHERE id = $1
             RETURNING id;
         `;
 
-        const params = [venueId];
-        const result = await this.db.query_executor(query, params);
-        return result.rows[0] || null;
-    }
+    const params = [venueId];
+    const result = await this.db.query_executor(query, params);
+    return result.rows[0] || null;
+  };
 
-
-    //for venue user reg
-    getVenueByIssn = async (issn) => {
-        const query = `
+  //for venue user reg
+  getVenueByIssn = async (issn) => {
+    const query = `
             SELECT
                 v.*,
                 p.name       AS publisher_name,
@@ -156,13 +153,40 @@ class VenueModel {
             WHERE v.issn = $1;
         `;
 
-        const params = [issn];
-        const result = await this.db.query_executor(query, params);
-        return result.rows[0] || null;
-    }
+    const params = [issn];
+    const result = await this.db.query_executor(query, params);
+    return result.rows[0] || null;
+  };
 
-    getVenuesByNameAndPublisher = async (venueName, publisherName) => {
-        const query = `
+  isVenueClaimed = async (venueId) => {
+    const query = `SELECT user_id FROM venue_user WHERE venue_id = $1;`;
+    const result = await this.db.query_executor(query, [venueId]);
+    return result.rows[0] || null;
+  };
+
+  getVenuesByNameWithClaimed = async (name) => {
+    const query = `
+            SELECT
+                v.id,
+                v.name,
+                v.issn,
+                v.type,
+                p.id   AS publisher_id,
+                p.name AS publisher_name,
+                CASE WHEN vu.user_id IS NOT NULL THEN true ELSE false END AS is_claimed
+            FROM venue v
+            JOIN publisher p ON p.id = v.publisher_id
+            LEFT JOIN venue_user vu ON vu.venue_id = v.id
+            WHERE v.name ILIKE '%' || $1 || '%'
+            ORDER BY v.name;
+        `;
+
+    const result = await this.db.query_executor(query, [name]);
+    return result.rows;
+  };
+
+  getVenuesByNameAndPublisher = async (venueName, publisherName) => {
+    const query = `
             SELECT
                 v.*,
                 p.name       AS publisher_name,
@@ -176,10 +200,10 @@ class VenueModel {
             ORDER BY v.name;
         `;
 
-        const params = [venueName, publisherName || null];
-        const result = await this.db.query_executor(query, params);
-        return result.rows;
-    }
+    const params = [venueName, publisherName || null];
+    const result = await this.db.query_executor(query, params);
+    return result.rows;
+  };
 }
 
 module.exports = VenueModel;
