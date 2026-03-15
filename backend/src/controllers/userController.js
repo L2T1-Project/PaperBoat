@@ -98,7 +98,7 @@ class UserController {
         });
       }
 
-      const status = await this.userModel.getStatusByName("active");
+      const status = await this.userModel.ensureStatusByName("active");
       if (!status) {
         return res
           .status(500)
@@ -226,12 +226,10 @@ class UserController {
         return res.status(404).json({ error: "User not found." });
       }
 
-      return res
-        .status(200)
-        .json({
-          userId: user.id,
-          role: req.auth.role || req.user?.role || "user",
-        });
+      return res.status(200).json({
+        userId: user.id,
+        role: req.auth.role || req.user?.role || "user",
+      });
     } catch (error) {
       return res.status(500).json({ error: "Internal server error." });
     }
@@ -438,21 +436,17 @@ class UserController {
       const { followingUserId } = req.body;
 
       if (isNaN(id) || !followingUserId || isNaN(followingUserId)) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "id (param) and followingUserId (body) must be numbers.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "id (param) and followingUserId (body) must be numbers.",
+        });
       }
 
       if (Number(id) === Number(followingUserId)) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "A user cannot follow themselves.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "A user cannot follow themselves.",
+        });
       }
 
       const follow = await this.userModel.followUser(
@@ -460,13 +454,11 @@ class UserController {
         Number(id),
       );
 
-      return res
-        .status(201)
-        .json({
-          success: true,
-          message: "Followed successfully.",
-          data: follow,
-        });
+      return res.status(201).json({
+        success: true,
+        message: "Followed successfully.",
+        data: follow,
+      });
     } catch (error) {
       if (error.code === "23505") {
         return res
@@ -491,12 +483,10 @@ class UserController {
       const { followingUserId } = req.body;
 
       if (isNaN(id) || !followingUserId || isNaN(followingUserId)) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "id (param) and followingUserId (body) must be numbers.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "id (param) and followingUserId (body) must be numbers.",
+        });
       }
 
       const follow = await this.userModel.unfollowUser(
@@ -510,13 +500,11 @@ class UserController {
           .json({ success: false, message: "Follow relationship not found." });
       }
 
-      return res
-        .status(200)
-        .json({
-          success: true,
-          message: "Unfollowed successfully.",
-          data: follow,
-        });
+      return res.status(200).json({
+        success: true,
+        message: "Unfollowed successfully.",
+        data: follow,
+      });
     } catch (error) {
       console.error("[unfollowUser]", error.message);
       return res
@@ -592,33 +580,27 @@ class UserController {
           .json({ success: false, message: "id must be a number." });
       }
       if (!paper_id || isNaN(paper_id)) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "paper_id is required and must be a number.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "paper_id is required and must be a number.",
+        });
       }
 
       const entry = await this.userModel.addToUserLibrary(
         Number(id),
         Number(paper_id),
       );
-      return res
-        .status(201)
-        .json({
-          success: true,
-          message: "Paper added to library.",
-          data: entry,
-        });
+      return res.status(201).json({
+        success: true,
+        message: "Paper added to library.",
+        data: entry,
+      });
     } catch (error) {
       if (error.code === "23505") {
-        return res
-          .status(409)
-          .json({
-            success: false,
-            message: "Paper is already in this user's library.",
-          });
+        return res.status(409).json({
+          success: false,
+          message: "Paper is already in this user's library.",
+        });
       }
       if (error.code === "23503") {
         return res
@@ -653,13 +635,11 @@ class UserController {
           .json({ success: false, message: "Paper not found in library." });
       }
 
-      return res
-        .status(200)
-        .json({
-          success: true,
-          message: "Paper removed from library.",
-          data: entry,
-        });
+      return res.status(200).json({
+        success: true,
+        message: "Paper removed from library.",
+        data: entry,
+      });
     } catch (error) {
       console.error("[removeFromLibrary]", error.message);
       return res
@@ -701,21 +681,17 @@ class UserController {
         isNaN(receiver_id) ||
         !message
       ) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "sender_id, receiver_id, and message are required.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "sender_id, receiver_id, and message are required.",
+        });
       }
 
       if (Number(sender_id) === Number(receiver_id)) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "A user cannot send feedback to themselves.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "A user cannot send feedback to themselves.",
+        });
       }
 
       const feedback = await this.userModel.createFeedback(
@@ -732,12 +708,10 @@ class UserController {
           .status(400)
           .json({ success: false, message: "Sender or receiver not found." });
       if (error.code === "23514")
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "A user cannot send feedback to themselves.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "A user cannot send feedback to themselves.",
+        });
       console.error("[createFeedback]", error.message);
       return res
         .status(500)
@@ -755,12 +729,10 @@ class UserController {
 
       const feedback = await this.userModel.getFeedbackById(Number(id));
       if (!feedback)
-        return res
-          .status(404)
-          .json({
-            success: false,
-            message: `Feedback with id ${id} not found.`,
-          });
+        return res.status(404).json({
+          success: false,
+          message: `Feedback with id ${id} not found.`,
+        });
       return res.status(200).json({ success: true, data: feedback });
     } catch (error) {
       console.error("[getFeedbackById]", error.message);
@@ -820,12 +792,10 @@ class UserController {
 
       const removed = await this.userModel.deleteFeedback(Number(id));
       if (!removed)
-        return res
-          .status(404)
-          .json({
-            success: false,
-            message: `Feedback with id ${id} not found.`,
-          });
+        return res.status(404).json({
+          success: false,
+          message: `Feedback with id ${id} not found.`,
+        });
       return res
         .status(200)
         .json({ success: true, message: "Feedback deleted.", data: removed });

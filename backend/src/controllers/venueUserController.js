@@ -28,7 +28,7 @@ class VenueUserController {
         });
       }
 
-      const status = await this.userModel.getStatusByName("active");
+      const status = await this.userModel.ensureStatusByName("active");
       if (!status) {
         return res
           .status(500)
@@ -110,12 +110,10 @@ class VenueUserController {
 
       if (!removed)
         return res.status(404).json({ error: "Venue user not found" });
-      return res
-        .status(200)
-        .json({
-          message: "Venue user removed successfully",
-          user_id: removed.user_id,
-        });
+      return res.status(200).json({
+        message: "Venue user removed successfully",
+        user_id: removed.user_id,
+      });
     } catch (err) {
       console.error("VenueUserController.deleteVenueUser:", err);
       return res.status(500).json({ error: "Internal server error" });

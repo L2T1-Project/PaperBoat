@@ -219,6 +219,30 @@ class UserModel {
     return result.rows[0] || null;
   };
 
+  ensureStatusByName = async (statusName) => {
+    const existing = await this.getStatusByName(statusName);
+    if (existing) {
+      return existing;
+    }
+
+    const insertQuery = `
+            INSERT INTO status (status_name)
+            VALUES ($1)
+            RETURNING id, status_name;
+        `;
+
+    try {
+      const created = await this.db.query_executor(insertQuery, [statusName]);
+      return created.rows[0] || null;
+    } catch (error) {
+      // Another request may have inserted the same status concurrently.
+      if (error.code === "23505") {
+        return this.getStatusByName(statusName);
+      }
+      throw error;
+    }
+  };
+
   getStatusById = async (statusId) => {
     const query = `SELECT id, status_name FROM status WHERE id = $1;`;
     const result = await this.db.query_executor(query, [statusId]);
