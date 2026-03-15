@@ -28,7 +28,7 @@ class ResearcherController {
         });
       }
 
-      const status = await this.userModel.getStatusByName("active");
+      const status = await this.userModel.ensureStatusByName("active");
       if (!status) {
         return res
           .status(500)
@@ -170,20 +170,16 @@ class ResearcherController {
           .json({ success: false, message: "id must be a number." });
       }
       if (!paper_id || isNaN(paper_id)) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "paper_id is required and must be a number.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "paper_id is required and must be a number.",
+        });
       }
       if (!position || isNaN(position) || Number(position) < 1) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "position is required and must be a positive integer.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "position is required and must be a positive integer.",
+        });
       }
 
       const claim = await this.researcherModel.createPaperClaim(
@@ -199,12 +195,10 @@ class ResearcherController {
       });
     } catch (error) {
       if (error.code === "23505") {
-        return res
-          .status(409)
-          .json({
-            success: false,
-            message: "This researcher has already claimed this paper.",
-          });
+        return res.status(409).json({
+          success: false,
+          message: "This researcher has already claimed this paper.",
+        });
       }
       if (error.code === "23503") {
         return res
@@ -285,12 +279,10 @@ class ResearcherController {
           .json({ success: false, message: "id must be a number." });
       }
       if (!institute_id || isNaN(institute_id)) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "institute_id is required and must be a number.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "institute_id is required and must be a number.",
+        });
       }
       if (!from_date) {
         return res
@@ -312,28 +304,22 @@ class ResearcherController {
       });
     } catch (error) {
       if (error.code === "23505") {
-        return res
-          .status(409)
-          .json({
-            success: false,
-            message: "This affiliation record already exists.",
-          });
+        return res.status(409).json({
+          success: false,
+          message: "This affiliation record already exists.",
+        });
       }
       if (error.code === "23503") {
-        return res
-          .status(404)
-          .json({
-            success: false,
-            message: "Researcher or institute not found.",
-          });
+        return res.status(404).json({
+          success: false,
+          message: "Researcher or institute not found.",
+        });
       }
       if (error.code === "23514") {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "upto_date must be on or after from_date.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "upto_date must be on or after from_date.",
+        });
       }
       console.error("[addInstituteHistory]", error.message);
       return res
@@ -372,20 +358,16 @@ class ResearcherController {
       const { from_date, upto_date } = req.body;
 
       if (isNaN(id) || isNaN(instituteId)) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "id and instituteId must be numbers.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "id and instituteId must be numbers.",
+        });
       }
       if (!from_date) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "from_date is required to identify the record.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "from_date is required to identify the record.",
+        });
       }
       if (!upto_date) {
         return res
@@ -413,12 +395,10 @@ class ResearcherController {
       });
     } catch (error) {
       if (error.code === "23514") {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "upto_date must be on or after from_date.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "upto_date must be on or after from_date.",
+        });
       }
       console.error("[updateInstituteHistory]", error.message);
       return res
@@ -433,20 +413,16 @@ class ResearcherController {
       const { from_date } = req.body;
 
       if (isNaN(id) || isNaN(instituteId)) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "id and instituteId must be numbers.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "id and instituteId must be numbers.",
+        });
       }
       if (!from_date) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "from_date is required to identify the record.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "from_date is required to identify the record.",
+        });
       }
 
       const entry = await this.researcherModel.removeInstituteHistory(
