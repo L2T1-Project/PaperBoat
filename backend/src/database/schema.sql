@@ -11,7 +11,8 @@ CREATE TABLE "user" (
     jwt_token VARCHAR(2000),
     profile_pic_url VARCHAR(300),
     phone_number VARCHAR(20),
-    status_id INTEGER NOT NULL REFERENCES status(id) on DELETE set null,
+    status_id INTEGER NOT NULL DEFAULT 1
+    REFERENCES status(id),
     created_at TIMESTAMP NOT NULL DEFAULT now(),
     bio TEXT
 );
