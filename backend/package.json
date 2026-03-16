@@ -5,7 +5,11 @@
   "main": "src/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon src/index.js",
+    "seed:openalex": "node src/scripts/seedOpenAlex.js",
+    "seed:preflight": "node src/scripts/seedIntegrityChecks.js --mode=preflight",
+    "seed:verify": "node src/scripts/seedIntegrityChecks.js --mode=post",
+    "probe:run": "node src/scripts/runQueryAnalysis.js"
   },
   "repository": {
     "type": "git",

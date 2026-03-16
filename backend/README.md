@@ -94,6 +94,87 @@ Login endpoint includes in-memory rate limiting per IP:
 | `LOG_SQL`            | No       | Enable SQL query logging when `true`        |
 | `BYPASS`             | No       | Skip auth middleware when `true` (dev only) |
 
+### OpenAlex Seed Variables
+
+| Variable                    | Required | Purpose |
+| --------------------------- | -------- | ------- |
+| `OPENALEX_API_KEY`          | No       | API key from OpenAlex. Recommended for larger imports and cost tracking. |
+| `OPENALEX_EMAIL`            | No       | Contact email used as `mailto` in OpenAlex requests. |
+| `OPENALEX_FILTER`           | No       | OpenAlex filter string. Default is `from_publication_date:2021-01-01,to_publication_date:2026-12-31`. |
+| `OPENALEX_CURSOR_START`     | No       | Cursor to resume from a previous run. Default `*` (start from beginning). |
+| `OPENALEX_MAX_WORKS`        | No       | Max works to ingest in one run. Default `10000`. |
+| `OPENALEX_PER_PAGE`         | No       | OpenAlex page size (1-100). Default `100`. |
+| `OPENALEX_DB_BATCH`         | No       | Batch size for join-table inserts. Default `500`. |
+| `OPENALEX_INCLUDE_CITATIONS`| No       | `true/false`, include citation edges only when both papers are in local imported set. Default `true`. |
+| `OPENALEX_DRY_RUN`          | No       | `true/false`, fetch and transform only, no DB writes. Default `true`. |
+| `OPENALEX_ALLOW_WRITE`      | No       | Safety gate for writes. Must be `true` to allow inserts/updates. Default `false`. |
+
+### OpenAlex Seed Command
+
+Run preflight before any write run:
+
+```bash
+npm run seed:preflight
+```
+
+Run the importer:
+
+```bash
+npm run seed:openalex
+```
+
+Run post-seed integrity verification:
+
+```bash
+npm run seed:verify
+```
+
+Example for your project scope (2021-2026):
+
+```bash
+OPENALEX_FILTER=from_publication_date:2021-01-01,to_publication_date:2026-12-31 OPENALEX_MAX_WORKS=10000 OPENALEX_ALLOW_WRITE=true OPENALEX_DRY_RUN=false npm run seed:openalex
+```
+
+Recommended first pass (dry run):
+
+```bash
+OPENALEX_DRY_RUN=true OPENALEX_MAX_WORKS=500 npm run seed:openalex
+```
+
+PowerShell examples:
+
+```powershell
+$env:OPENALEX_DRY_RUN = 'true'
+$env:OPENALEX_MAX_WORKS = '500'
+npm run seed:openalex
+```
+
+```powershell
+$env:OPENALEX_FILTER = 'from_publication_date:2021-01-01,to_publication_date:2026-12-31'
+$env:OPENALEX_MAX_WORKS = '10000'
+$env:OPENALEX_ALLOW_WRITE = 'true'
+$env:OPENALEX_DRY_RUN = 'false'
+npm run seed:openalex
+```
+
+Resume from a previous cursor (to avoid overlap in staged runs):
+
+```powershell
+$env:OPENALEX_CURSOR_START = '<paste resumeCursor from previous run>'
+$env:OPENALEX_MAX_WORKS = '2000'
+$env:OPENALEX_ALLOW_WRITE = 'true'
+$env:OPENALEX_DRY_RUN = 'false'
+npm run seed:openalex
+```
+
+Recommended staged write workflow on Neon:
+
+1. `npm run seed:preflight`
+2. Dry run with planned chunk size (for example 300 or 500 works)
+3. Write run with `OPENALEX_ALLOW_WRITE=true` and `OPENALEX_DRY_RUN=false`
+4. Copy `resumeCursor` from logs and use it in the next staged run
+5. `npm run seed:verify` after each write batch
+
 ## 6. API Base and Response Pattern
 
 Base URL prefix: `/api`

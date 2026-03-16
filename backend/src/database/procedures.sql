@@ -2,8 +2,7 @@ CREATE OR REPLACE PROCEDURE approve_paper_claim(
     claim_researcher_id INTEGER,
     claim_paper_id INTEGER,
     author_position INTEGER
-);
-
+)
 LANGUAGE plpgsql
 AS $$
 DECLARE
@@ -16,7 +15,9 @@ BEGIN
     linked_author_id := get_author_id(claim_researcher_id);
 
     INSERT INTO paper_author (paper_id, author_id, position)
-    VALUES (claim_paper_id, linked_author_id, author_position);
+    VALUES (claim_paper_id, linked_author_id, author_position)
+    ON CONFLICT (paper_id, author_id) DO UPDATE
+    SET position = EXCLUDED.position;
 
     -- oi resersearcher er follower der notify
     SELECT p.title INTO paper_title FROM paper p WHERE p.id = claim_paper_id;
@@ -31,7 +32,8 @@ BEGIN
         WHERE f.followed_user_id = claim_researcher_id
     LOOP
         INSERT INTO notification_receiver (notification_id, user_id)
-        VALUES (notif_id, follower.user_id);
+        VALUES (notif_id, follower.user_id)
+        ON CONFLICT (notification_id, user_id) DO NOTHING;
     END LOOP;
 END;
 $$;
@@ -56,7 +58,9 @@ BEGIN
 
     INSERT INTO notification (message) VALUES (msg) RETURNING id INTO notif_id;
     INSERT INTO user_notification (notification_id, triggered_user_id) VALUES (notif_id, follower_user_id);
-    INSERT INTO notification_receiver (notification_id, user_id) VALUES (notif_id, followed_user_id);
+    INSERT INTO notification_receiver (notification_id, user_id)
+    VALUES (notif_id, followed_user_id)
+    ON CONFLICT (notification_id, user_id) DO NOTHING;
 END;
 $$;
 
@@ -87,7 +91,8 @@ BEGIN
         WHERE pa.paper_id = reviewed_paper_id
     LOOP
         INSERT INTO notification_receiver (notification_id, user_id)
-        VALUES (notif_id, author.user_id);
+        VALUES (notif_id, author.user_id)
+        ON CONFLICT (notification_id, user_id) DO NOTHING;
     END LOOP;
 END;
 $$;
@@ -117,7 +122,9 @@ BEGIN
 
     INSERT INTO notification (message) VALUES (msg) RETURNING id INTO notif_id;
     INSERT INTO review_notification (notification_id, review_id) VALUES (notif_id, voted_review_id);
-    INSERT INTO notification_receiver (notification_id, user_id) VALUES (notif_id, review_author);
+    INSERT INTO notification_receiver (notification_id, user_id)
+    VALUES (notif_id, review_author)
+    ON CONFLICT (notification_id, user_id) DO NOTHING;
 END;
 $$;
 
@@ -148,7 +155,8 @@ BEGIN
         SELECT a.user_id FROM admin a
     LOOP
         INSERT INTO notification_receiver (notification_id, user_id)
-        VALUES (notif_id, admin.user_id);
+        VALUES (notif_id, admin.user_id)
+        ON CONFLICT (notification_id, user_id) DO NOTHING;
     END LOOP;
 END;
 $$;
