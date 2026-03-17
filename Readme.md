@@ -1,4 +1,4 @@
-# PaperBoat: LLM-Optimized Technical README
+# PaperBoat: 
 
 ResearchGate-style academic networking platform implemented in JavaScript with a split frontend/backend architecture.
 
