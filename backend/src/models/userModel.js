@@ -81,6 +81,17 @@ class UserModel {
     return result.rows[0] || null;
   };
 
+  getUserDisplayNameById = async (id) => {
+    const query = `
+            SELECT id AS user_id, username, full_name
+            FROM "user"
+            WHERE id = $1;
+        `;
+
+    const result = await this.db.query_executor(query, [id]);
+    return result.rows[0] || null;
+  };
+
   getUserByEmail = async (email) => {
     const query = `
             SELECT *

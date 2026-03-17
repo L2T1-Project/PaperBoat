@@ -10,6 +10,7 @@ class ReviewRouter {
 
     #initRoutes() {
         this.router.get('/paper/:paperId',    this.reviewController.getReviewsByPaper);
+        this.router.get('/paper/:paperId/tree', this.reviewController.getReviewTreeByPaper);
 
         this.router.post('/',                 this.reviewController.createReview);
         this.router.get('/',                  this.reviewController.getAllReviews);

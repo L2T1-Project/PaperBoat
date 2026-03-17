@@ -14,6 +14,9 @@ class VenueUserRouter {
     #initRoutes() {
         this.#router.post('/',      this.#controller.createVenueUser);
         this.#router.get('/',       this.#controller.getAllVenueUsers);
+        this.#router.get('/:id/dashboard/top-cited-papers', this.#controller.getDashboardTopCitedPapers);
+        this.#router.get('/:id/dashboard/published-papers', this.#controller.getDashboardPublishedPapers);
+        this.#router.get('/:id/dashboard/prominent-authors', this.#controller.getDashboardProminentAuthors);
         this.#router.get('/:id',    this.#controller.getVenueUserById);
         this.#router.delete('/:id', this.#controller.deleteVenueUser);
     }

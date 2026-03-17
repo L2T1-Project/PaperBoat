@@ -119,6 +119,84 @@ class VenueUserController {
       return res.status(500).json({ error: "Internal server error" });
     }
   };
+
+  getDashboardTopCitedPapers = async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { limit = 10, offset = 0 } = req.query;
+
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "id must be a number." });
+      }
+      if (req.auth?.userId !== Number(id)) {
+        return res.status(403).json({ error: "Forbidden." });
+      }
+
+      const safeLimit = Math.min(100, Math.max(1, Number(limit) || 10));
+      const safeOffset = Math.max(0, Number(offset) || 0);
+
+      const papers = await this.venueUserModel.getDashboardTopCitedPapers(
+        Number(id),
+        safeLimit,
+        safeOffset,
+      );
+
+      return res.status(200).json({ success: true, count: papers.length, data: papers });
+    } catch (err) {
+      console.error("VenueUserController.getDashboardTopCitedPapers:", err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  };
+
+  getDashboardPublishedPapers = async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { limit = 20, offset = 0 } = req.query;
+
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "id must be a number." });
+      }
+      if (req.auth?.userId !== Number(id)) {
+        return res.status(403).json({ error: "Forbidden." });
+      }
+
+      const safeLimit = Math.min(200, Math.max(1, Number(limit) || 20));
+      const safeOffset = Math.max(0, Number(offset) || 0);
+
+      const papers = await this.venueUserModel.getDashboardPublishedPapers(
+        Number(id),
+        safeLimit,
+        safeOffset,
+      );
+
+      return res.status(200).json({ success: true, count: papers.length, data: papers });
+    } catch (err) {
+      console.error("VenueUserController.getDashboardPublishedPapers:", err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  };
+
+  getDashboardProminentAuthors = async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { limit = 10 } = req.query;
+
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "id must be a number." });
+      }
+      if (req.auth?.userId !== Number(id)) {
+        return res.status(403).json({ error: "Forbidden." });
+      }
+
+      const safeLimit = Math.min(100, Math.max(1, Number(limit) || 10));
+      const authors = await this.venueUserModel.getDashboardProminentAuthors(Number(id), safeLimit);
+
+      return res.status(200).json({ success: true, count: authors.length, data: authors });
+    } catch (err) {
+      console.error("VenueUserController.getDashboardProminentAuthors:", err);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  };
 }
 
 module.exports = VenueUserController;

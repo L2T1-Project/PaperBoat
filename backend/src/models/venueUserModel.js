@@ -118,6 +118,36 @@ class VenueUserModel {
     const result = await this.db.query_executor(query, params);
     return result.rows[0] || null;
   };
+
+  getDashboardTopCitedPapers = async (userId, limit = 10, offset = 0) => {
+    const query = `
+            SELECT *
+            FROM fn_get_venue_top_cited_papers($1, $2, $3);
+        `;
+
+    const result = await this.db.query_executor(query, [userId, limit, offset]);
+    return result.rows;
+  };
+
+  getDashboardPublishedPapers = async (userId, limit = 20, offset = 0) => {
+    const query = `
+            SELECT *
+            FROM fn_get_venue_published_papers($1, $2, $3);
+        `;
+
+    const result = await this.db.query_executor(query, [userId, limit, offset]);
+    return result.rows;
+  };
+
+  getDashboardProminentAuthors = async (userId, limit = 10) => {
+    const query = `
+            SELECT *
+            FROM fn_get_venue_prominent_authors($1, $2);
+        `;
+
+    const result = await this.db.query_executor(query, [userId, limit]);
+    return result.rows;
+  };
 }
 
 module.exports = VenueUserModel;

@@ -92,14 +92,14 @@ export function VenueLookup({
           onChange={(event) => onChange(event.target.value)}
           placeholder="Enter ISSN"
           disabled={disabled || isLoading}
-          className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-100"
+          className="w-full rounded-lg border border-slate-300 px-4 py-2 focus:ring-2 focus:ring-slate-400 focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-100"
         />
 
         <button
           type="button"
           onClick={handleLookup}
           disabled={disabled || isLoading}
-          className="inline-flex min-w-28 items-center justify-center rounded-lg bg-[#1a6eb5] px-4 py-2 font-semibold text-white transition-all hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex min-w-28 items-center justify-center rounded-lg bg-slate-800 px-4 py-2 font-semibold text-white transition-all hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isLoading ? (
             <span className="inline-flex items-center gap-2">

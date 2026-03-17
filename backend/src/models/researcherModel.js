@@ -231,6 +231,16 @@ class ResearcherModel {
     const result = await this.db.query_executor(query, params);
     return result.rows[0] || null;
   };
+
+  getDashboardPapers = async (researcherId, limit = 5, offset = 0) => {
+    const query = `
+            SELECT *
+            FROM fn_get_researcher_recent_papers($1, $2, $3);
+        `;
+
+    const result = await this.db.query_executor(query, [researcherId, limit, offset]);
+    return result.rows;
+  };
 }
 
 module.exports = ResearcherModel;

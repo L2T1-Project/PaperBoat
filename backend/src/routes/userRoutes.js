@@ -18,6 +18,7 @@ class UserRouter {
 
     this.router.post("/", this.userController.createUser);
     this.router.get("/", this.userController.getAllUsers);
+    this.router.get("/:id/display-name", this.userController.getUserDisplayName);
     this.router.get("/:id", this.userController.getUserById);
     this.router.put("/:id", this.userController.updateUser);
     this.router.delete("/:id", this.userController.deleteUser);

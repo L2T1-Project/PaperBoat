@@ -14,9 +14,15 @@ function parseStoredUser(rawUser) {
     if (
       typeof parsed === "object" &&
       parsed !== null &&
-      typeof parsed.userId === "number" &&
+      (typeof parsed.userId === "number" || typeof parsed.userId === "string") &&
       typeof parsed.role === "string"
     ) {
+      const normalizedUserId = Number(parsed.userId);
+
+      if (Number.isNaN(normalizedUserId)) {
+        return null;
+      }
+
       return parsed;
     }
 
@@ -29,6 +35,7 @@ function parseStoredUser(rawUser) {
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(null);
   const [user, setUser] = useState(null);
+  const [isAuthReady, setIsAuthReady] = useState(false);
 
   useEffect(() => {
     const storedToken = localStorage.getItem("pb_token");
@@ -36,19 +43,30 @@ export function AuthProvider({ children }) {
 
     if (storedToken && storedUser) {
       setToken(storedToken);
-      setUser(storedUser);
+      setUser({ ...storedUser, userId: Number(storedUser.userId) });
+      setIsAuthReady(true);
       return;
     }
 
     localStorage.removeItem("pb_token");
     localStorage.removeItem("pb_user");
+    setIsAuthReady(true);
   }, []);
 
   const login = (nextToken, userObj) => {
+    const normalizedUser = {
+      ...userObj,
+      userId: Number(userObj?.userId),
+    };
+
+    if (Number.isNaN(normalizedUser.userId)) {
+      return;
+    }
+
     setToken(nextToken);
-    setUser(userObj);
+    setUser(normalizedUser);
     localStorage.setItem("pb_token", nextToken);
-    localStorage.setItem("pb_user", JSON.stringify(userObj));
+    localStorage.setItem("pb_user", JSON.stringify(normalizedUser));
   };
 
   const logout = async () => {
@@ -74,11 +92,12 @@ export function AuthProvider({ children }) {
     () => ({
       token,
       user,
+      isAuthReady,
       isAuthenticated: Boolean(token && user),
       login,
       logout,
     }),
-    [token, user],
+    [token, user, isAuthReady],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -81,6 +81,38 @@ class ReviewModel {
         return result.rows;
     }
 
+    getReviewTreeByPaper = async (paperId) => {
+        const query = `
+            WITH RECURSIVE review_tree AS (
+                SELECT
+                    r.*,
+                    u.username,
+                    u.full_name,
+                    u.profile_pic_url
+                FROM review r
+                JOIN researcher res ON res.user_id = r.researcher_id
+                JOIN "user" u       ON u.id = res.user_id
+                WHERE r.paper_id = $1
+
+                UNION ALL
+
+                SELECT
+                    child.*,
+                    u2.username,
+                    u2.full_name,
+                    u2.profile_pic_url
+                FROM review child
+                JOIN researcher res2 ON res2.user_id = child.researcher_id
+                JOIN "user" u2      ON u2.id = res2.user_id
+                JOIN review_tree rt   ON child.parent_review_id = rt.id
+            )
+            SELECT *
+            FROM review_tree;
+        `;
+        const result = await this.db.query_executor(query, [paperId]);
+        return result.rows;
+    }
+
     deleteReview = async (reviewId) => {
         const query = `DELETE FROM review WHERE id = $1 RETURNING id;`;
         const result = await this.db.query_executor(query, [reviewId]);

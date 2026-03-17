@@ -12,6 +12,7 @@ class ResearcherRouter {
         this.router.post('/',  this.researcherController.createResearcher);
         this.router.get('/',  this.researcherController.getAllResearchers);
         this.router.get('/:id',  this.researcherController.getResearcherById);
+        this.router.get('/:id/dashboard/papers', this.researcherController.getDashboardPapers);
         this.router.delete('/:id', this.researcherController.deleteResearcher);
 
         this.router.get('/:id/claims',  this.researcherController.getPaperClaimsByResearcher);

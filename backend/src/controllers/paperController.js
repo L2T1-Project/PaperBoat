@@ -45,10 +45,149 @@ class PaperController {
 
     getAllPapers = async (req, res) => {
         try {
-            const papers = await this.paperModel.getAllPapers();
-            return res.status(200).json({ success: true, count: papers.length, data: papers });
+            const { page = 1, limit = 10 } = req.query;
+            const safePage = Math.max(1, Number(page) || 1);
+            const safeLimit = Math.min(50, Math.max(1, Number(limit) || 10));
+            const offset = (safePage - 1) * safeLimit;
+
+            const papers = await this.paperModel.getAllPapers(safeLimit, offset);
+            const total = await this.paperModel.getTotalPapersCount();
+            const totalPages = Math.max(1, Math.ceil(total / safeLimit));
+
+            return res.status(200).json({
+                success: true,
+                count: papers.length,
+                data: papers,
+                pagination: {
+                    page: safePage,
+                    limit: safeLimit,
+                    total,
+                    totalPages,
+                },
+            });
         } catch (error) {
             console.error('[getAllPapers]', error.message);
+            return res.status(500).json({ success: false, message: 'Internal server error.' });
+        }
+    }
+
+    searchPapers = async (req, res) => {
+        try {
+            const { q, page = 1, limit = 10 } = req.query;
+
+            if (!q || typeof q !== 'string' || !q.trim()) {
+                return res.status(400).json({ success: false, message: 'Search term (q) is required.' });
+            }
+
+            const safePage = Math.max(1, Number(page) || 1);
+            const safeLimit = Math.min(50, Math.max(1, Number(limit) || 10));
+            const offset = (safePage - 1) * safeLimit;
+            const searchTerm = q.trim();
+
+            const papers = await this.paperModel.searchPapers(searchTerm, safeLimit, offset);
+            const total = await this.paperModel.countSearchResults(searchTerm);
+            const totalPages = Math.max(1, Math.ceil(total / safeLimit));
+
+            return res.status(200).json({
+                success: true,
+                count: papers.length,
+                data: papers,
+                pagination: {
+                    page: safePage,
+                    limit: safeLimit,
+                    total,
+                    totalPages,
+                },
+            });
+        } catch (error) {
+            console.error('[searchPapers]', error.message);
+            return res.status(500).json({ success: false, message: 'Internal server error.' });
+        }
+    }
+
+    getPapersByDomain = async (req, res) => {
+        try {
+            const { domainId } = req.params;
+            const { page = 1, limit = 10 } = req.query;
+
+            if (isNaN(domainId)) {
+                return res.status(400).json({ success: false, message: 'domainId must be a number.' });
+            }
+
+            const safePage = Math.max(1, Number(page) || 1);
+            const safeLimit = Math.min(50, Math.max(1, Number(limit) || 10));
+            const offset = (safePage - 1) * safeLimit;
+
+            const papers = await this.paperModel.getPapersByDomain(Number(domainId), safeLimit, offset);
+            const total = await this.paperModel.countPapersByDomain(Number(domainId));
+            const totalPages = Math.max(1, Math.ceil(total / safeLimit));
+
+            return res.status(200).json({
+                success: true,
+                count: papers.length,
+                data: papers,
+                pagination: { page: safePage, limit: safeLimit, total, totalPages },
+            });
+        } catch (error) {
+            console.error('[getPapersByDomain]', error.message);
+            return res.status(500).json({ success: false, message: 'Internal server error.' });
+        }
+    }
+
+    getPapersByField = async (req, res) => {
+        try {
+            const { fieldId } = req.params;
+            const { page = 1, limit = 10 } = req.query;
+
+            if (isNaN(fieldId)) {
+                return res.status(400).json({ success: false, message: 'fieldId must be a number.' });
+            }
+
+            const safePage = Math.max(1, Number(page) || 1);
+            const safeLimit = Math.min(50, Math.max(1, Number(limit) || 10));
+            const offset = (safePage - 1) * safeLimit;
+
+            const papers = await this.paperModel.getPapersByField(Number(fieldId), safeLimit, offset);
+            const total = await this.paperModel.countPapersByField(Number(fieldId));
+            const totalPages = Math.max(1, Math.ceil(total / safeLimit));
+
+            return res.status(200).json({
+                success: true,
+                count: papers.length,
+                data: papers,
+                pagination: { page: safePage, limit: safeLimit, total, totalPages },
+            });
+        } catch (error) {
+            console.error('[getPapersByField]', error.message);
+            return res.status(500).json({ success: false, message: 'Internal server error.' });
+        }
+    }
+
+    getPapersByTopic = async (req, res) => {
+        try {
+            const { topicId } = req.params;
+            const { page = 1, limit = 10 } = req.query;
+
+            if (isNaN(topicId)) {
+                return res.status(400).json({ success: false, message: 'topicId must be a number.' });
+            }
+
+            const safePage = Math.max(1, Number(page) || 1);
+            const safeLimit = Math.min(50, Math.max(1, Number(limit) || 10));
+            const offset = (safePage - 1) * safeLimit;
+
+            const papers = await this.paperModel.getPapersByTopic(Number(topicId), safeLimit, offset);
+            const total = await this.paperModel.countPapersByTopic(Number(topicId));
+            const totalPages = Math.max(1, Math.ceil(total / safeLimit));
+
+            return res.status(200).json({
+                success: true,
+                count: papers.length,
+                data: papers,
+                pagination: { page: safePage, limit: safeLimit, total, totalPages },
+            });
+        } catch (error) {
+            console.error('[getPapersByTopic]', error.message);
             return res.status(500).json({ success: false, message: 'Internal server error.' });
         }
     }

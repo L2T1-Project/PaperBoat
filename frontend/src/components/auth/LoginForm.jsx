@@ -89,7 +89,7 @@ export function LoginForm() {
           type="email"
           autoComplete="email"
           {...register("email")}
-          className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          className="w-full rounded-lg border border-slate-300 px-4 py-2 focus:ring-2 focus:ring-slate-400 focus:outline-none"
           placeholder="you@example.com"
         />
         {errors.email ? (
@@ -110,7 +110,7 @@ export function LoginForm() {
             type={showPassword ? "text" : "password"}
             autoComplete="current-password"
             {...register("password")}
-            className="w-full rounded-lg border border-gray-300 px-4 py-2 pr-12 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            className="w-full rounded-lg border border-slate-300 px-4 py-2 pr-12 focus:ring-2 focus:ring-slate-400 focus:outline-none"
             placeholder="Enter your password"
           />
           <button
@@ -182,7 +182,7 @@ export function LoginForm() {
       <div className="text-right">
         <a
           href="#"
-          className="text-sm font-medium text-[#1a6eb5] hover:text-blue-800"
+          className="text-sm font-medium text-slate-700 hover:text-slate-900"
         >
           Forgot password?
         </a>
@@ -195,7 +195,7 @@ export function LoginForm() {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full rounded-lg bg-[#1a6eb5] px-6 py-2 font-semibold text-white transition-all hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
+        className="w-full rounded-lg bg-slate-800 px-6 py-2 font-semibold text-white transition-all hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isSubmitting ? "Logging in..." : "Login"}
       </button>
@@ -204,7 +204,7 @@ export function LoginForm() {
         Do not have an account?{" "}
         <Link
           to="/signup"
-          className="font-semibold text-[#1a6eb5] hover:text-blue-800"
+          className="font-semibold text-slate-900 hover:text-slate-700"
         >
           Sign up
         </Link>
