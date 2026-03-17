@@ -24,7 +24,7 @@ export function RoleSelector({ selectedRole, onChange, disabled = false }) {
             disabled={disabled}
             className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
               isActive
-                ? "bg-[#1a6eb5] text-white shadow-sm"
+                ? "bg-slate-800 text-white shadow-sm"
                 : "bg-white text-gray-700 hover:bg-gray-50"
             } disabled:cursor-not-allowed disabled:opacity-60`}
           >

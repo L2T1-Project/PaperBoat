@@ -33,37 +33,230 @@ class PaperModel {
         return result.rows[0];
     }
 
-    getAllPapers = async () => {
+    getAllPapers = async (limit = 10, offset = 0) => {
         const query = `
-            SELECT p.title,
+            SELECT p.id,
+            p.title,
             p.publication_date,
             p.pdf_url,
             p.doi,
             p.is_retracted,
             p.github_repo,
             p.venue_id,
-            v.name
+            v.name AS venue_name,
+            v.type,
+            v.issn,
+            pub.name AS publisher_name
             FROM "paper" p
-            JOIN venue v on p.venue_id = v.id;
+            JOIN venue v ON p.venue_id = v.id
+            LEFT JOIN publisher pub ON pub.id = v.publisher_id
+            ORDER BY p.publication_date DESC NULLS LAST
+            LIMIT $1 OFFSET $2;
         `;
 
-        const result = await this.db.query_executor(query);
+        const result = await this.db.query_executor(query, [limit, offset]);
         return result.rows;
+    }
+
+    getTotalPapersCount = async () => {
+        const query = `SELECT COUNT(*)::INT AS total FROM paper;`;
+        const result = await this.db.query_executor(query);
+        return result.rows[0]?.total || 0;
+    }
+
+    searchPapers = async (searchTerm, limit = 10, offset = 0) => {
+        const query = `
+            SELECT p.id,
+            p.title,
+            p.publication_date,
+            p.pdf_url,
+            p.doi,
+            p.is_retracted,
+            p.github_repo,
+            p.venue_id,
+            v.name AS venue_name,
+            v.type,
+            v.issn,
+            pub.name AS publisher_name
+            FROM "paper" p
+            JOIN venue v ON p.venue_id = v.id
+            LEFT JOIN publisher pub ON pub.id = v.publisher_id
+            WHERE p.title ILIKE $1
+            ORDER BY p.publication_date DESC NULLS LAST
+            LIMIT $2 OFFSET $3;
+        `;
+
+        const result = await this.db.query_executor(query, [`%${searchTerm}%`, limit, offset]);
+        return result.rows;
+    }
+
+    countSearchResults = async (searchTerm) => {
+        const query = `SELECT COUNT(*)::INT AS total FROM paper WHERE title ILIKE $1;`;
+        const result = await this.db.query_executor(query, [`%${searchTerm}%`]);
+        return result.rows[0]?.total || 0;
+    }
+
+    getPapersByDomain = async (domainId, limit = 10, offset = 0) => {
+        const query = `
+            SELECT DISTINCT p.id,
+            p.title,
+            p.publication_date,
+            p.pdf_url,
+            p.doi,
+            p.is_retracted,
+            p.github_repo,
+            p.venue_id,
+            v.name AS venue_name,
+            v.type,
+            v.issn,
+            pub.name AS publisher_name
+            FROM "paper" p
+            JOIN venue v ON p.venue_id = v.id
+            LEFT JOIN publisher pub ON pub.id = v.publisher_id
+            JOIN paper_topic pt ON p.id = pt.paper_id
+            JOIN topic t ON t.id = pt.topic_id
+            JOIN field f ON f.id = t.field_id
+            WHERE f.domain_id = $1
+            ORDER BY p.publication_date DESC NULLS LAST
+            LIMIT $2 OFFSET $3;
+        `;
+
+        const result = await this.db.query_executor(query, [domainId, limit, offset]);
+        return result.rows;
+    }
+
+    countPapersByDomain = async (domainId) => {
+        const query = `
+            SELECT COUNT(DISTINCT p.id)::INT AS total
+            FROM paper p
+            JOIN paper_topic pt ON p.id = pt.paper_id
+            JOIN topic t ON t.id = pt.topic_id
+            JOIN field f ON f.id = t.field_id
+            WHERE f.domain_id = $1;
+        `;
+
+        const result = await this.db.query_executor(query, [domainId]);
+        return result.rows[0]?.total || 0;
+    }
+
+    getPapersByField = async (fieldId, limit = 10, offset = 0) => {
+        const query = `
+            SELECT DISTINCT p.id,
+            p.title,
+            p.publication_date,
+            p.pdf_url,
+            p.doi,
+            p.is_retracted,
+            p.github_repo,
+            p.venue_id,
+            v.name AS venue_name,
+            v.type,
+            v.issn,
+            pub.name AS publisher_name
+            FROM "paper" p
+            JOIN venue v ON p.venue_id = v.id
+            LEFT JOIN publisher pub ON pub.id = v.publisher_id
+            JOIN paper_topic pt ON p.id = pt.paper_id
+            JOIN topic t ON t.id = pt.topic_id
+            WHERE t.field_id = $1
+            ORDER BY p.publication_date DESC NULLS LAST
+            LIMIT $2 OFFSET $3;
+        `;
+
+        const result = await this.db.query_executor(query, [fieldId, limit, offset]);
+        return result.rows;
+    }
+
+    countPapersByField = async (fieldId) => {
+        const query = `
+            SELECT COUNT(DISTINCT p.id)::INT AS total
+            FROM paper p
+            JOIN paper_topic pt ON p.id = pt.paper_id
+            JOIN topic t ON t.id = pt.topic_id
+            WHERE t.field_id = $1;
+        `;
+
+        const result = await this.db.query_executor(query, [fieldId]);
+        return result.rows[0]?.total || 0;
+    }
+
+    getPapersByTopic = async (topicId, limit = 10, offset = 0) => {
+        const query = `
+            SELECT p.id,
+            p.title,
+            p.publication_date,
+            p.pdf_url,
+            p.doi,
+            p.is_retracted,
+            p.github_repo,
+            p.venue_id,
+            v.name AS venue_name,
+            v.type,
+            v.issn,
+            pub.name AS publisher_name
+            FROM "paper" p
+            JOIN venue v ON p.venue_id = v.id
+            LEFT JOIN publisher pub ON pub.id = v.publisher_id
+            JOIN paper_topic pt ON p.id = pt.paper_id
+            WHERE pt.topic_id = $1
+            ORDER BY p.publication_date DESC NULLS LAST
+            LIMIT $2 OFFSET $3;
+        `;
+
+        const result = await this.db.query_executor(query, [topicId, limit, offset]);
+        return result.rows;
+    }
+
+    countPapersByTopic = async (topicId) => {
+        const query = `
+            SELECT COUNT(*)::INT AS total
+            FROM paper_topic
+            WHERE topic_id = $1;
+        `;
+
+        const result = await this.db.query_executor(query, [topicId]);
+        return result.rows[0]?.total || 0;
     }
 
     getPaperById = async (id) => {
         const query = `
-            SELECT p.title,
-            p.publication_date,
-            p.pdf_url,
-            p.doi,
-            p.is_retracted,
-            p.github_repo,
-            p.venue_id,
-            v.name
+            SELECT
+                p.id,
+                p.title,
+                p.publication_date,
+                p.pdf_url,
+                p.doi,
+                p.is_retracted,
+                p.github_repo,
+                p.venue_id,
+                v.name AS venue_name,
+                v.type AS venue_type,
+                v.issn,
+                pub.id AS publisher_id,
+                pub.name AS publisher_name,
+                NULL::TEXT AS publisher_country,
+                NULL::TEXT AS publisher_website,
+                COALESCE(
+                    json_agg(
+                        CASE WHEN a.id IS NOT NULL THEN
+                            json_build_object(
+                                'id', a.id,
+                                'name', a.name,
+                                'position', pa.position,
+                                'orc_id', a.orc_id
+                            )
+                        END
+                        ORDER BY pa.position
+                    ) FILTER (WHERE a.id IS NOT NULL),
+                    '[]'::json
+                ) AS authors
             FROM "paper" p
-            JOIN venue v on p.venue_id = v.id
-            WHERE p.id = $1;
+            JOIN venue v ON p.venue_id = v.id
+            LEFT JOIN publisher pub ON pub.id = v.publisher_id
+            LEFT JOIN paper_author pa ON pa.paper_id = p.id
+            LEFT JOIN author a ON a.id = pa.author_id
+            WHERE p.id = $1
+            GROUP BY p.id, v.id, pub.id;
         `;
 
         const params = [id];

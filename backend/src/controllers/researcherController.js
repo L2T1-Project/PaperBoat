@@ -447,6 +447,41 @@ class ResearcherController {
         .json({ success: false, message: "Internal server error." });
     }
   };
+
+  getDashboardPapers = async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { limit = 5, offset = 0 } = req.query;
+
+      if (isNaN(id)) {
+        return res
+          .status(400)
+          .json({ success: false, message: "id must be a number." });
+      }
+
+      if (req.auth?.userId !== Number(id)) {
+        return res.status(403).json({ success: false, message: "Forbidden." });
+      }
+
+      const safeLimit = Math.min(100, Math.max(1, Number(limit) || 5));
+      const safeOffset = Math.max(0, Number(offset) || 0);
+
+      const papers = await this.researcherModel.getDashboardPapers(
+        Number(id),
+        safeLimit,
+        safeOffset,
+      );
+
+      return res
+        .status(200)
+        .json({ success: true, count: papers.length, data: papers });
+    } catch (error) {
+      console.error("[getDashboardPapers]", error.message);
+      return res
+        .status(500)
+        .json({ success: false, message: "Internal server error." });
+    }
+  };
 }
 
 module.exports = ResearcherController;

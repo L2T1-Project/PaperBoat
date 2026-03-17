@@ -36,11 +36,46 @@ const publicRoutes = [
   { method: "GET", path: "/api/venues/lookup/issn" },
   { method: "GET", path: "/api/venues/lookup/name" },
   { method: "POST", path: "/api/venue-users" },
+  { method: "GET", path: "/api/papers" },
+  { method: "GET", path: "/api/papers/search" },
+  { method: "GET", path: "/api/papers/domain/:domainId" },
+  { method: "GET", path: "/api/papers/field/:fieldId" },
+  { method: "GET", path: "/api/papers/topic/:topicId" },
+  { method: "GET", path: "/api/papers/:id" },
+  { method: "GET", path: "/api/papers/:id/topics" },
+  { method: "GET", path: "/api/topics" },
+  { method: "GET", path: "/api/topics/domains" },
+  { method: "GET", path: "/api/topics/domains/:domainId/fields" },
+  { method: "GET", path: "/api/topics/fields/:fieldId/topics" },
 ];
+
+function doesPathMatch(routePath, requestPath) {
+  const routeParts = routePath.split("/").filter(Boolean);
+  const requestParts = requestPath.split("/").filter(Boolean);
+
+  if (routeParts.length !== requestParts.length) {
+    return false;
+  }
+
+  for (let i = 0; i < routeParts.length; i += 1) {
+    const routePart = routeParts[i];
+    const requestPart = requestParts[i];
+
+    if (routePart.startsWith(":")) {
+      continue;
+    }
+
+    if (routePart !== requestPart) {
+      return false;
+    }
+  }
+
+  return true;
+}
 
 app.use((req, res, next) => {
   const isPublic = publicRoutes.some(
-    (route) => route.method === req.method && route.path === req.path,
+    (route) => route.method === req.method && doesPathMatch(route.path, req.path),
   );
 
   if (isPublic) {

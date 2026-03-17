@@ -7,9 +7,17 @@ class ReviewController {
 
     createReview = async (req, res) => {
         try {
-            const { researcher_id, paper_id, parent_review_id, text } = req.body;
-            if (!researcher_id || !text) {
-                return res.status(400).json({ error: 'researcher_id and text are required' });
+            const { paper_id, parent_review_id, text } = req.body;
+            const researcher_id = req.auth?.userId;
+
+            if (!researcher_id) {
+                return res.status(401).json({ error: 'Authentication required' });
+            }
+            if (req.user?.role !== 'researcher') {
+                return res.status(403).json({ error: 'Only researchers can create reviews' });
+            }
+            if (!text) {
+                return res.status(400).json({ error: 'text is required' });
             }
             if (!paper_id && !parent_review_id) {
                 return res.status(400).json({ error: 'Either paper_id or parent_review_id is required' });
@@ -60,6 +68,37 @@ class ReviewController {
         }
     }
 
+    getReviewTreeByPaper = async (req, res) => {
+        try {
+            const { paperId } = req.params;
+            const reviewTree = await this.reviewModel.getReviewTreeByPaper(paperId);
+
+            const roots = [];
+            const repliesByReview = {};
+
+            reviewTree.forEach((review) => {
+                if (review.parent_review_id) {
+                    const parentId = Number(review.parent_review_id);
+                    repliesByReview[parentId] = repliesByReview[parentId] || [];
+                    repliesByReview[parentId].push(review);
+                } else {
+                    roots.push(review);
+                }
+            });
+
+            roots.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+            Object.keys(repliesByReview).forEach((parentId) => {
+                repliesByReview[parentId].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+            });
+
+            return res.status(200).json({ roots, repliesByReview });
+        } catch (err) {
+            console.error('ReviewController.getReviewTreeByPaper:', err);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+    }
+
     getRepliesByReview = async (req, res) => {
         try {
             const { id } = req.params;
@@ -86,9 +125,17 @@ class ReviewController {
     castVote = async (req, res) => {
         try {
             const { id } = req.params;
-            const { researcher_id, is_upvote } = req.body;
-            if (!researcher_id || is_upvote === undefined) {
-                return res.status(400).json({ error: 'researcher_id and is_upvote are required' });
+            const { is_upvote } = req.body;
+            const researcher_id = req.auth?.userId;
+
+            if (!researcher_id) {
+                return res.status(401).json({ error: 'Authentication required' });
+            }
+            if (req.user?.role !== 'researcher') {
+                return res.status(403).json({ error: 'Only researchers can vote' });
+            }
+            if (is_upvote === undefined) {
+                return res.status(400).json({ error: 'is_upvote is required' });
             }
             const vote = await this.reviewModel.castVote(researcher_id, id, is_upvote);
             return res.status(200).json(vote);
@@ -102,8 +149,14 @@ class ReviewController {
     removeVote = async (req, res) => {
         try {
             const { id } = req.params;
-            const { researcher_id } = req.body;
-            if (!researcher_id) return res.status(400).json({ error: 'researcher_id is required' });
+            const researcher_id = req.auth?.userId;
+
+            if (!researcher_id) {
+                return res.status(401).json({ error: 'Authentication required' });
+            }
+            if (req.user?.role !== 'researcher') {
+                return res.status(403).json({ error: 'Only researchers can remove votes' });
+            }
             const removed = await this.reviewModel.removeVote(researcher_id, id);
             if (!removed) return res.status(404).json({ error: 'Vote not found' });
             return res.status(200).json({ message: 'Vote removed' });

@@ -258,7 +258,7 @@ export function SignupForm() {
             id="full_name"
             type="text"
             {...register("full_name")}
-            className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            className="w-full rounded-lg border border-slate-300 px-4 py-2 focus:ring-2 focus:ring-slate-400 focus:outline-none"
             placeholder="Your full name"
           />
           {errors.full_name ? (
@@ -279,7 +279,7 @@ export function SignupForm() {
             id="username"
             type="text"
             {...register("username")}
-            className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            className="w-full rounded-lg border border-slate-300 px-4 py-2 focus:ring-2 focus:ring-slate-400 focus:outline-none"
             placeholder="username"
           />
           {errors.username ? (
@@ -300,7 +300,7 @@ export function SignupForm() {
             id="email"
             type="email"
             {...register("email")}
-            className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            className="w-full rounded-lg border border-slate-300 px-4 py-2 focus:ring-2 focus:ring-slate-400 focus:outline-none"
             placeholder="you@example.com"
           />
           {errors.email ? (
@@ -320,7 +320,7 @@ export function SignupForm() {
               id="password"
               type={showPassword ? "text" : "password"}
               {...register("password")}
-              className="w-full rounded-lg border border-gray-300 px-4 py-2 pr-12 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-slate-300 px-4 py-2 pr-12 focus:ring-2 focus:ring-slate-400 focus:outline-none"
               placeholder="At least 8 characters"
             />
             <button
@@ -350,7 +350,7 @@ export function SignupForm() {
               id="confirm_password"
               type={showConfirmPassword ? "text" : "password"}
               {...register("confirm_password")}
-              className="w-full rounded-lg border border-gray-300 px-4 py-2 pr-12 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="w-full rounded-lg border border-slate-300 px-4 py-2 pr-12 focus:ring-2 focus:ring-slate-400 focus:outline-none"
               placeholder="Retype your password"
             />
             <button
@@ -379,7 +379,7 @@ export function SignupForm() {
             id="phone_number"
             type="text"
             {...register("phone_number")}
-            className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            className="w-full rounded-lg border border-slate-300 px-4 py-2 focus:ring-2 focus:ring-slate-400 focus:outline-none"
             placeholder="Phone number"
           />
         </div>
@@ -395,7 +395,7 @@ export function SignupForm() {
             id="bio"
             rows={4}
             {...register("bio")}
-            className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            className="w-full rounded-lg border border-slate-300 px-4 py-2 focus:ring-2 focus:ring-slate-400 focus:outline-none"
             placeholder="Tell us a little about yourself"
           />
         </div>
@@ -407,7 +407,7 @@ export function SignupForm() {
         <button
           type="submit"
           disabled={isSubmitting || !canSubmit}
-          className="w-full rounded-lg bg-[#1a6eb5] px-6 py-2 font-semibold text-white transition-all hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full rounded-lg bg-slate-800 px-6 py-2 font-semibold text-white transition-all hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSubmitting ? "Creating account..." : "Create account"}
         </button>
@@ -416,7 +416,7 @@ export function SignupForm() {
           Already have an account?{" "}
           <Link
             to="/login"
-            className="font-semibold text-[#1a6eb5] hover:text-blue-800"
+            className="font-semibold text-slate-900 hover:text-slate-700"
           >
             Login
           </Link>

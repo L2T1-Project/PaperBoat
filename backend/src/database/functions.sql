@@ -98,3 +98,175 @@ BEGIN
     RETURN h;
 END;
 $$;
+
+
+CREATE OR REPLACE FUNCTION fn_get_researcher_recent_papers(
+    researcher_user_id INTEGER,
+    p_limit INTEGER DEFAULT 5,
+    p_offset INTEGER DEFAULT 0
+)
+RETURNS TABLE (
+    paper_id INTEGER,
+    title VARCHAR,
+    publication_date DATE,
+    doi VARCHAR,
+    venue_name VARCHAR,
+    citation_count INTEGER
+)
+LANGUAGE plpgsql
+STABLE
+AS $$
+DECLARE
+    linked_author_id INTEGER;
+BEGIN
+    linked_author_id := get_author_id(researcher_user_id);
+
+    RETURN QUERY
+    SELECT
+        p.id AS paper_id,
+        p.title,
+        p.publication_date,
+        p.doi,
+        v.name AS venue_name,
+        COUNT(c.citing_id)::INT AS citation_count
+    FROM paper_author pa
+    JOIN paper p ON p.id = pa.paper_id
+    JOIN venue v ON v.id = p.venue_id
+    LEFT JOIN citation c ON c.cited_id = p.id
+    WHERE pa.author_id = linked_author_id
+    GROUP BY p.id, v.id
+    ORDER BY p.publication_date DESC NULLS LAST, p.id DESC
+    LIMIT p_limit OFFSET p_offset;
+END;
+$$;
+
+
+CREATE OR REPLACE FUNCTION fn_get_venue_top_cited_papers(
+    venue_user_id INTEGER,
+    p_limit INTEGER DEFAULT 10,
+    p_offset INTEGER DEFAULT 0
+)
+RETURNS TABLE (
+    paper_id INTEGER,
+    title VARCHAR,
+    publication_date DATE,
+    doi VARCHAR,
+    citation_count INTEGER
+)
+LANGUAGE plpgsql
+STABLE
+AS $$
+DECLARE
+    linked_venue_id INTEGER;
+BEGIN
+    SELECT venue_id
+    INTO linked_venue_id
+    FROM venue_user
+    WHERE user_id = venue_user_id;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Venue user with user_id % not found', venue_user_id;
+    END IF;
+
+    RETURN QUERY
+    SELECT
+        p.id AS paper_id,
+        p.title,
+        p.publication_date,
+        p.doi,
+        COUNT(c.citing_id)::INT AS citation_count
+    FROM paper p
+    LEFT JOIN citation c ON c.cited_id = p.id
+    WHERE p.venue_id = linked_venue_id
+    GROUP BY p.id
+    ORDER BY citation_count DESC, p.publication_date DESC NULLS LAST, p.id DESC
+    LIMIT p_limit OFFSET p_offset;
+END;
+$$;
+
+
+CREATE OR REPLACE FUNCTION fn_get_venue_published_papers(
+    venue_user_id INTEGER,
+    p_limit INTEGER DEFAULT 20,
+    p_offset INTEGER DEFAULT 0
+)
+RETURNS TABLE (
+    paper_id INTEGER,
+    title VARCHAR,
+    publication_date DATE,
+    doi VARCHAR,
+    citation_count INTEGER
+)
+LANGUAGE plpgsql
+STABLE
+AS $$
+DECLARE
+    linked_venue_id INTEGER;
+BEGIN
+    SELECT venue_id
+    INTO linked_venue_id
+    FROM venue_user
+    WHERE user_id = venue_user_id;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Venue user with user_id % not found', venue_user_id;
+    END IF;
+
+    RETURN QUERY
+    SELECT
+        p.id AS paper_id,
+        p.title,
+        p.publication_date,
+        p.doi,
+        COUNT(c.citing_id)::INT AS citation_count
+    FROM paper p
+    LEFT JOIN citation c ON c.cited_id = p.id
+    WHERE p.venue_id = linked_venue_id
+    GROUP BY p.id
+    ORDER BY p.publication_date DESC NULLS LAST, p.id DESC
+    LIMIT p_limit OFFSET p_offset;
+END;
+$$;
+
+
+CREATE OR REPLACE FUNCTION fn_get_venue_prominent_authors(
+    venue_user_id INTEGER,
+    p_limit INTEGER DEFAULT 10
+)
+RETURNS TABLE (
+    author_id INTEGER,
+    author_name VARCHAR,
+    paper_count INTEGER,
+    total_citations INTEGER
+)
+LANGUAGE plpgsql
+STABLE
+AS $$
+DECLARE
+    linked_venue_id INTEGER;
+BEGIN
+    SELECT venue_id
+    INTO linked_venue_id
+    FROM venue_user
+    WHERE user_id = venue_user_id;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Venue user with user_id % not found', venue_user_id;
+    END IF;
+
+    RETURN QUERY
+    SELECT
+        a.id AS author_id,
+        a.name AS author_name,
+        COUNT(DISTINCT p.id)::INT AS paper_count,
+        COUNT(c.citing_id)::INT AS total_citations
+    FROM paper p
+    JOIN paper_author pa ON pa.paper_id = p.id
+    JOIN author a ON a.id = pa.author_id
+    LEFT JOIN citation c ON c.cited_id = p.id
+    WHERE p.venue_id = linked_venue_id
+    GROUP BY a.id
+    ORDER BY paper_count DESC, total_citations DESC, a.name ASC
+    LIMIT p_limit;
+END;
+$$;

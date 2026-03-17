@@ -341,6 +341,39 @@ class UserController {
     }
   };
 
+  getUserDisplayName = async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      if (isNaN(id)) {
+        return res
+          .status(400)
+          .json({ success: false, message: "id must be a number." });
+      }
+
+      if (req.auth?.userId !== Number(id)) {
+        return res.status(403).json({ success: false, message: "Forbidden." });
+      }
+
+      const user = await this.userModel.getUserDisplayNameById(Number(id));
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: `User with id ${id} not found.`,
+        });
+      }
+
+      return res.status(200).json({ success: true, data: user });
+    } catch (error) {
+      console.error("[getUserDisplayName]", error.message);
+      return res.status(500).json({
+        success: false,
+        message: "Internal server error.",
+      });
+    }
+  };
+
   updateUser = async (req, res) => {
     try {
       const { id } = req.params;

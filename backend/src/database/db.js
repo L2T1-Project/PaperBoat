@@ -37,13 +37,20 @@ class DB_Connection{
         const start = Date.now();
         const client = await this.pool.connect();
         try {
+            await client.query('BEGIN');
             const result = await client.query(query, params);
+            await client.query('COMMIT');
             if(process.env.LOG_SQL === 'true'){
                 console.log(`[SQL ${Date.now()-start}ms] rows=${result.rowCount} :: ${query.split('\n').join(' ')}`);
                 if(params.length) console.log('  params:', params);
             }
             return result;
         } catch (error) {
+            try {
+                await client.query('ROLLBACK');
+            } catch (rollbackError) {
+                console.log('Rollback failed: ' + rollbackError.message);
+            }
             console.log("Error executing database query: " + error.message);
             throw error; 
         } finally{
