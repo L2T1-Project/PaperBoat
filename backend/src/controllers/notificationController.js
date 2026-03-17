@@ -87,11 +87,11 @@ class NotificationController {
     markAsRead = async (req, res) => {
         try {
             const { id } = req.params;
-            const { user_id } = req.body;
-            if (isNaN(id) || !user_id || isNaN(user_id)) {
-                return res.status(400).json({ success: false, message: 'id (param) and user_id (body) must be numbers.' });
+            const userId = req.auth?.userId;
+            if (isNaN(id) || !userId || isNaN(userId)) {
+                return res.status(400).json({ success: false, message: 'Invalid notification id or unauthenticated request.' });
             }
-            const updated = await this.notificationModel.markAsRead(Number(id), Number(user_id));
+            const updated = await this.notificationModel.markAsRead(Number(id), Number(userId));
             if (!updated) {
                 return res.status(404).json({ success: false, message: 'Notification receiver record not found.' });
             }
@@ -104,9 +104,9 @@ class NotificationController {
 
     markAllAsRead = async (req, res) => {
         try {
-            const { userId } = req.params;
-            if (isNaN(userId)) {
-                return res.status(400).json({ success: false, message: 'userId must be a number.' });
+            const userId = req.auth?.userId;
+            if (!userId || isNaN(userId)) {
+                return res.status(401).json({ success: false, message: 'Unauthenticated request.' });
             }
             const updated = await this.notificationModel.markAllAsRead(Number(userId));
             return res.status(200).json({ success: true, message: 'All notifications marked as read.', count: updated.length });

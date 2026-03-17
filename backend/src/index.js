@@ -32,6 +32,11 @@ const publicRoutes = [
   { method: "GET", path: "/api/users/status/all" },
   { method: "GET", path: "/api/authors/lookup/orc-id" },
   { method: "GET", path: "/api/authors/lookup/name" },
+  { method: "GET", path: "/api/authors" },
+  { method: "GET", path: "/api/authors/:id" },
+  { method: "GET", path: "/api/authors/:id/profile" },
+  { method: "GET", path: "/api/authors/:id/papers" },
+  { method: "GET", path: "/api/authors/paper/:paperId" },
   { method: "POST", path: "/api/researchers" },
   { method: "GET", path: "/api/venues/lookup/issn" },
   { method: "GET", path: "/api/venues/lookup/name" },
@@ -75,7 +80,8 @@ function doesPathMatch(routePath, requestPath) {
 
 app.use((req, res, next) => {
   const isPublic = publicRoutes.some(
-    (route) => route.method === req.method && doesPathMatch(route.path, req.path),
+    (route) =>
+      route.method === req.method && doesPathMatch(route.path, req.path),
   );
 
   if (isPublic) {

@@ -9,6 +9,8 @@ import PaperDetailsPage from "./pages/PaperDetailsPage";
 import PaperReviewsPage from "./pages/PaperReviewsPage";
 import PapersDiscoveryPage from "./pages/PapersDiscoveryPage";
 import SignupPage from "./pages/SignupPage";
+import AuthorPage from "./pages/AuthorPage";
+import AuthorSearchPage from "./pages/AuthorSearchPage";
 
 function App() {
   return (
@@ -29,6 +31,8 @@ function App() {
           />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
+          <Route path="/authors" element={<AuthorSearchPage />} />
+          <Route path="/authors/:id" element={<AuthorPage />} />
           <Route
             path="/dashboard"
             element={
