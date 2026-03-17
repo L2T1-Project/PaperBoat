@@ -83,8 +83,9 @@ class VenueModel {
             SELECT
                 v.*,
                 p.name       AS publisher_name,
-                p.country    AS publisher_country,
-                p.website    AS publisher_website
+          NULL::TEXT   AS publisher_country,
+          NULL::TEXT   AS publisher_website,
+          p.img_url    AS publisher_img_url
             FROM venue v
             LEFT JOIN publisher p ON p.id = v.publisher_id
             ORDER BY v.name;
@@ -99,8 +100,9 @@ class VenueModel {
             SELECT
                 v.*,
                 p.name       AS publisher_name,
-                p.country    AS publisher_country,
-                p.website    AS publisher_website
+          NULL::TEXT   AS publisher_country,
+          NULL::TEXT   AS publisher_website,
+          p.img_url    AS publisher_img_url
             FROM venue v
             LEFT JOIN publisher p ON p.id = v.publisher_id
             WHERE v.id = $1;
@@ -146,11 +148,13 @@ class VenueModel {
             SELECT
                 v.*,
                 p.name       AS publisher_name,
-                p.country    AS publisher_country,
-                p.website    AS publisher_website
+          NULL::TEXT   AS publisher_country,
+          NULL::TEXT   AS publisher_website,
+          p.img_url    AS publisher_img_url
             FROM venue v
             LEFT JOIN publisher p ON p.id = v.publisher_id
-            WHERE v.issn = $1;
+        WHERE regexp_replace(UPPER(COALESCE(v.issn, '')), '[^0-9X]', '', 'g') =
+            regexp_replace(UPPER(COALESCE($1, '')), '[^0-9X]', '', 'g');
         `;
 
     const params = [issn];
@@ -190,8 +194,9 @@ class VenueModel {
             SELECT
                 v.*,
                 p.name       AS publisher_name,
-                p.country    AS publisher_country,
-                p.website    AS publisher_website
+          NULL::TEXT   AS publisher_country,
+          NULL::TEXT   AS publisher_website,
+          p.img_url    AS publisher_img_url
             FROM venue v
             LEFT JOIN publisher p ON p.id = v.publisher_id
             WHERE

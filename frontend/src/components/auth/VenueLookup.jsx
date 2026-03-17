@@ -121,8 +121,8 @@ export function VenueLookup({
           <p className="font-semibold">Venue Found</p>
           <p>Name: {venue.name}</p>
           <p>ISSN: {venue.issn}</p>
-          <p>Type: {venue.type}</p>
-          <p>Publisher: {venue.publisher_name}</p>
+          <p>Type: {venue.type || "N/A"}</p>
+          <p>Publisher: {venue.publisher?.name || "N/A"}</p>
         </div>
       ) : null}
     </div>
