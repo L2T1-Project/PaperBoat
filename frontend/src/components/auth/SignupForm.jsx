@@ -122,7 +122,7 @@ export function SignupForm() {
     }
 
     if (selectedRole === "venue_user") {
-      return Boolean(resolvedVenue?.id && resolvedVenue?.is_claimed === false);
+      return Boolean(resolvedVenue?.id);
     }
 
     return true;
