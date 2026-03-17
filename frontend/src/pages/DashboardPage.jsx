@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
 
@@ -133,7 +134,12 @@ export default function DashboardPage() {
               <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                 {researcherRecentPapers.map((paper) => (
                   <article key={paper.paper_id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-sm font-semibold text-slate-900 line-clamp-2">{paper.title}</p>
+                    <Link
+                      to={`/papers/${paper.paper_id}`}
+                      className="text-sm font-semibold text-slate-900 line-clamp-2 hover:text-slate-700 hover:underline"
+                    >
+                      {paper.title}
+                    </Link>
                     <p className="mt-1 text-xs text-slate-600">{paper.venue_name || "N/A"}</p>
                     <p className="mt-1 text-xs text-slate-500">Citations: {paper.citation_count || 0}</p>
                   </article>
@@ -146,7 +152,12 @@ export default function DashboardPage() {
               <div ref={researcherScrollRef} className="flex gap-3 overflow-x-auto pb-2">
                 {researcherAllPapers.map((paper) => (
                   <article key={paper.paper_id} className="min-w-[280px] rounded-xl border border-slate-200 bg-white p-4">
-                    <p className="text-sm font-semibold text-slate-900 line-clamp-2">{paper.title}</p>
+                    <Link
+                      to={`/papers/${paper.paper_id}`}
+                      className="text-sm font-semibold text-slate-900 line-clamp-2 hover:text-slate-700 hover:underline"
+                    >
+                      {paper.title}
+                    </Link>
                     <p className="mt-1 text-xs text-slate-600">{paper.venue_name || "N/A"}</p>
                     <p className="mt-1 text-xs text-slate-500">Citations: {paper.citation_count || 0}</p>
                   </article>
@@ -184,7 +195,12 @@ export default function DashboardPage() {
                 <div className="mt-3 grid gap-3 md:grid-cols-2">
                   {venueTopCitedPapers.map((paper) => (
                     <article key={paper.paper_id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                      <p className="text-sm font-semibold text-slate-900 line-clamp-2">{paper.title}</p>
+                      <Link
+                        to={`/papers/${paper.paper_id}`}
+                        className="text-sm font-semibold text-slate-900 line-clamp-2 hover:text-slate-700 hover:underline"
+                      >
+                        {paper.title}
+                      </Link>
                       <p className="mt-1 text-xs text-slate-500">Citations: {paper.citation_count || 0}</p>
                     </article>
                   ))}
@@ -207,7 +223,12 @@ export default function DashboardPage() {
                 <div className="mt-3 grid gap-3 md:grid-cols-2">
                   {venuePublishedPapers.map((paper) => (
                     <article key={paper.paper_id} className="rounded-xl border border-slate-200 bg-white p-4">
-                      <p className="text-sm font-semibold text-slate-900 line-clamp-2">{paper.title}</p>
+                      <Link
+                        to={`/papers/${paper.paper_id}`}
+                        className="text-sm font-semibold text-slate-900 line-clamp-2 hover:text-slate-700 hover:underline"
+                      >
+                        {paper.title}
+                      </Link>
                       <p className="mt-1 text-xs text-slate-500">Citations: {paper.citation_count || 0}</p>
                     </article>
                   ))}
