@@ -10,7 +10,7 @@ class NotificationRouter {
 
     #initRoutes() {
         this.router.get('/user/:userId',                         this.notificationController.getNotificationsByUser);
-        this.router.patch('/user/:userId/read-all',             this.notificationController.markAllAsRead);
+        this.router.patch('/read-all',                          this.notificationController.markAllAsRead);
 
         this.router.post('/',                                   this.notificationController.createNotification);
         this.router.get('/:id',                                 this.notificationController.getNotificationById);
@@ -18,7 +18,7 @@ class NotificationRouter {
 
         this.router.post('/:id/receivers',                      this.notificationController.addReceiver);
 
-        this.router.patch('/:id/receivers/read',                this.notificationController.markAsRead);
+        this.router.patch('/:id/read',                         this.notificationController.markAsRead);
 
         this.router.post('/:id/subtypes/user',                  this.notificationController.createUserNotification);
         this.router.get('/:id/subtypes/user',                   this.notificationController.getUserNotificationById);

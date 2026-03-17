@@ -188,6 +188,48 @@ class AuthorModel {
     const result = await this.db.query_executor(query, params);
     return result.rows;
   };
+  // Full author profile: basic info + h-index + citation stats.
+  // Computes h-index inline via CTE — works for all authors, including
+  // those without a researcher account (same algorithm as compute_h_index() in functions.sql).
+  getAuthorProfile = async (authorId) => {
+    const query = `
+      WITH paper_cites AS (
+          SELECT pa.paper_id,
+                 COUNT(c.citing_id)::INT AS cites
+          FROM paper_author pa
+          LEFT JOIN citation c ON c.cited_id = pa.paper_id
+          WHERE pa.author_id = $1
+          GROUP BY pa.paper_id
+      ),
+      h_calc AS (
+          SELECT COALESCE(MAX(ranked.rnk), 0) AS h_index
+          FROM (
+              SELECT cites,
+                     ROW_NUMBER() OVER (ORDER BY cites DESC) AS rnk
+              FROM paper_cites
+          ) ranked
+          WHERE ranked.cites >= ranked.rnk
+      )
+      SELECT
+          a.id,
+          a.name,
+          a.orc_id,
+          res.user_id          AS researcher_user_id,
+          u.username,
+          u.full_name,
+          u.profile_pic_url,
+          u.bio,
+          (SELECT COUNT(*)::INT FROM paper_author pa2 WHERE pa2.author_id = a.id) AS paper_count,
+          COALESCE((SELECT SUM(cites)::INT FROM paper_cites), 0)                  AS total_citations,
+          (SELECT h_index FROM h_calc)                                            AS h_index
+      FROM author a
+      LEFT JOIN researcher res ON res.author_id = a.id
+      LEFT JOIN "user" u       ON u.id = res.user_id
+      WHERE a.id = $1;
+    `;
+    const result = await this.db.query_executor(query, [authorId]);
+    return result.rows[0] || null;
+  };
 }
 
 module.exports = AuthorModel;

@@ -258,20 +258,16 @@ class AuthorController {
           .json({ success: false, message: "id must be a number." });
       }
       if (!paper_id || isNaN(paper_id)) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "paper_id is required and must be a number.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "paper_id is required and must be a number.",
+        });
       }
       if (!position || isNaN(position) || Number(position) < 1) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "position is required and must be a positive integer.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "position is required and must be a positive integer.",
+        });
       }
 
       const link = await this.authorModel.createPaperAuthor(
@@ -287,12 +283,10 @@ class AuthorController {
       });
     } catch (error) {
       if (error.code === "23505") {
-        return res
-          .status(409)
-          .json({
-            success: false,
-            message: "This author is already linked to that paper.",
-          });
+        return res.status(409).json({
+          success: false,
+          message: "This author is already linked to that paper.",
+        });
       }
       if (error.code === "23503") {
         return res
@@ -345,12 +339,10 @@ class AuthorController {
       const { orc_id } = req.query;
 
       if (!orc_id) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "orc_id query parameter is required.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "orc_id query parameter is required.",
+        });
       }
 
       const author = await this.authorModel.getAuthorByOrcId(orc_id);
@@ -385,12 +377,10 @@ class AuthorController {
       const { name } = req.query;
 
       if (!name) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "name query parameter is required.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "name query parameter is required.",
+        });
       }
 
       const authors = await this.authorModel.getAuthorsByName(name);
@@ -412,6 +402,29 @@ class AuthorController {
       return res.status(200).json(formatted);
     } catch (error) {
       console.error("[lookupByName]", error.message);
+      return res
+        .status(500)
+        .json({ success: false, message: "Internal server error." });
+    }
+  };
+  getAuthorProfile = async (req, res) => {
+    try {
+      const { id } = req.params;
+      if (isNaN(id)) {
+        return res
+          .status(400)
+          .json({ success: false, message: "id must be a number." });
+      }
+      const profile = await this.authorModel.getAuthorProfile(Number(id));
+      if (!profile) {
+        return res.status(404).json({
+          success: false,
+          message: `Author with id ${id} not found.`,
+        });
+      }
+      return res.status(200).json({ success: true, data: profile });
+    } catch (error) {
+      console.error("[getAuthorProfile]", error.message);
       return res
         .status(500)
         .json({ success: false, message: "Internal server error." });
