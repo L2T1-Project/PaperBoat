@@ -8,8 +8,10 @@ AS $$
 DECLARE
     linked_author_id INTEGER;
     paper_title VARCHAR(500);
-    notif_id INTEGER;
-    msg TEXT;
+    followers_notif_id INTEGER;
+    researcher_notif_id INTEGER;
+    followers_msg TEXT;
+    researcher_msg TEXT;
     follower RECORD;
 BEGIN
     linked_author_id := get_author_id(claim_researcher_id);
@@ -19,12 +21,21 @@ BEGIN
     ON CONFLICT (paper_id, author_id) DO UPDATE
     SET position = EXCLUDED.position;
 
-    -- oi resersearcher er follower der notify
+    -- Notify claimant directly that claim is approved.
     SELECT p.title INTO paper_title FROM paper p WHERE p.id = claim_paper_id;
-    msg := 'A paper you may be interested in has been published: "' || paper_title || '"';
+    researcher_msg := 'Your claim for paper "' || paper_title || '" has been approved.';
 
-    INSERT INTO notification (message) VALUES (msg) RETURNING id INTO notif_id;
-    INSERT INTO paper_notification (notification_id, paper_id) VALUES (notif_id, claim_paper_id);
+    INSERT INTO notification (message) VALUES (researcher_msg) RETURNING id INTO researcher_notif_id;
+    INSERT INTO paper_notification (notification_id, paper_id) VALUES (researcher_notif_id, claim_paper_id);
+    INSERT INTO notification_receiver (notification_id, user_id)
+    VALUES (researcher_notif_id, claim_researcher_id)
+    ON CONFLICT (notification_id, user_id) DO NOTHING;
+
+    -- Notify followers that a relevant paper was published/claimed.
+    followers_msg := 'A paper you may be interested in has been published: "' || paper_title || '"';
+
+    INSERT INTO notification (message) VALUES (followers_msg) RETURNING id INTO followers_notif_id;
+    INSERT INTO paper_notification (notification_id, paper_id) VALUES (followers_notif_id, claim_paper_id);
 
     FOR follower IN
         SELECT f.following_user_id AS user_id
@@ -32,7 +43,7 @@ BEGIN
         WHERE f.followed_user_id = claim_researcher_id
     LOOP
         INSERT INTO notification_receiver (notification_id, user_id)
-        VALUES (notif_id, follower.user_id)
+        VALUES (followers_notif_id, follower.user_id)
         ON CONFLICT (notification_id, user_id) DO NOTHING;
     END LOOP;
 END;
@@ -158,5 +169,29 @@ BEGIN
         VALUES (notif_id, admin.user_id)
         ON CONFLICT (notification_id, user_id) DO NOTHING;
     END LOOP;
+END;
+$$;
+
+
+CREATE OR REPLACE PROCEDURE notify_claim_declined(
+    claim_researcher_id INTEGER,
+    claim_paper_id INTEGER
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    notif_id INTEGER;
+    paper_title VARCHAR(500);
+    msg TEXT;
+BEGIN
+    SELECT p.title INTO paper_title FROM paper p WHERE p.id = claim_paper_id;
+
+    msg := 'Your claim for paper "' || paper_title || '" has been declined.';
+
+    INSERT INTO notification (message) VALUES (msg) RETURNING id INTO notif_id;
+    INSERT INTO paper_notification (notification_id, paper_id) VALUES (notif_id, claim_paper_id);
+    INSERT INTO notification_receiver (notification_id, user_id)
+    VALUES (notif_id, claim_researcher_id)
+    ON CONFLICT (notification_id, user_id) DO NOTHING;
 END;
 $$;

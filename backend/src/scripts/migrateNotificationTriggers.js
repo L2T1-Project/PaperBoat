@@ -8,8 +8,8 @@
  */
 
 const dotenv = require('dotenv');
-const path   = require('path');
-const pkg    = require('pg');
+const path = require('path');
+const pkg = require('pg');
 const { Pool } = pkg;
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
@@ -22,8 +22,8 @@ const pool = new Pool({
 // Each entry is one DDL statement. Order matters — function before trigger.
 const statements = [
 
-/* ─── trg_notify_paper_review ──────────────────────────────────────────────── */
-`
+    /* ─── trg_notify_paper_review ──────────────────────────────────────────────── */
+    `
 CREATE OR REPLACE FUNCTION trg_fn_notify_paper_review()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -81,17 +81,17 @@ END;
 $$
 `,
 
-`DROP TRIGGER IF EXISTS trg_notify_paper_review ON review`,
+    `DROP TRIGGER IF EXISTS trg_notify_paper_review ON review`,
 
-`
+    `
 CREATE TRIGGER trg_notify_paper_review
 AFTER INSERT ON review
 FOR EACH ROW
 EXECUTE FUNCTION trg_fn_notify_paper_review()
 `,
 
-/* ─── trg_notify_review_vote ────────────────────────────────────────────────── */
-`
+    /* ─── trg_notify_review_vote ────────────────────────────────────────────────── */
+    `
 CREATE OR REPLACE FUNCTION trg_fn_notify_review_vote()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -127,9 +127,9 @@ END;
 $$
 `,
 
-`DROP TRIGGER IF EXISTS trg_notify_review_vote ON review_vote`,
+    `DROP TRIGGER IF EXISTS trg_notify_review_vote ON review_vote`,
 
-`
+    `
 CREATE TRIGGER trg_notify_review_vote
 AFTER INSERT ON review_vote
 FOR EACH ROW

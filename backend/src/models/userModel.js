@@ -272,6 +272,12 @@ class UserModel {
     return result.rows[0] || null;
   };
 
+  checkAdminRole = async (userId) => {
+    const query = `SELECT user_id FROM admin WHERE user_id = $1;`;
+    const result = await this.db.query_executor(query, [userId]);
+    return result.rows[0] || null;
+  };
+
   followUser = async (followingUserId, followedUserId) => {
     const query = `
             INSERT INTO follows (following_user_id, followed_user_id)

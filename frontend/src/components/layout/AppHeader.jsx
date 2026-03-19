@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import api from "../../api/axios";
 import NotificationBox from "../notifications/NotificationBox";
 
 function NavLink({ to, label, active }) {
@@ -18,6 +20,25 @@ function NavLink({ to, label, active }) {
 export default function AppHeader() {
   const location = useLocation();
   const { isAuthenticated, logout, user } = useAuth();
+  const [researcherAuthorId, setResearcherAuthorId] = useState(null);
+
+  useEffect(() => {
+    const fetchResearcherProfile = async () => {
+      if (!isAuthenticated || user?.role !== "researcher" || !user?.userId) {
+        setResearcherAuthorId(null);
+        return;
+      }
+
+      try {
+        const response = await api.get(`/researchers/${user.userId}`);
+        setResearcherAuthorId(response.data?.data?.author_id || null);
+      } catch {
+        setResearcherAuthorId(null);
+      }
+    };
+
+    fetchResearcherProfile();
+  }, [isAuthenticated, user?.role, user?.userId]);
 
   const isAuthPage =
     location.pathname === "/login" || location.pathname === "/signup";
@@ -52,14 +73,37 @@ export default function AppHeader() {
                   active={location.pathname === "/dashboard"}
                 />
               ) : null}
+              {isAuthenticated && user?.role === "researcher" ? (
+                <NavLink
+                  to={`/researchers/${user.userId}/claims`}
+                  label="My Claims"
+                  active={location.pathname === `/researchers/${user.userId}/claims`}
+                />
+              ) : null}
+              {isAuthenticated && user?.role === "admin" ? (
+                <NavLink
+                  to="/admin/claims"
+                  label="Claim Queue"
+                  active={location.pathname === "/admin/claims"}
+                />
+              ) : null}
             </>
           )}
 
           {isAuthenticated ? (
             <div className="ml-2 flex items-center gap-2">
-              <span className="hidden rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-600 sm:inline">
-                {user?.role || "user"}
-              </span>
+              {user?.role === "researcher" ? (
+                <Link
+                  to={researcherAuthorId ? `/authors/${researcherAuthorId}` : "/authors"}
+                  className="hidden rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100 sm:inline"
+                >
+                  Your Profile
+                </Link>
+              ) : (
+                <span className="hidden rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-600 sm:inline">
+                  {user?.role || "user"}
+                </span>
+              )}
               <NotificationBox />
               <button
                 type="button"

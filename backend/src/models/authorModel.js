@@ -83,7 +83,8 @@ class AuthorModel {
                 p.is_retracted,
                 p.github_repo,
                 pa.position,
-                v.name AS venue_name
+                v.name AS venue_name,
+                get_paper_citation_count(p.id) AS citation_count
             FROM paper_author pa
             JOIN paper p ON p.id = pa.paper_id
             JOIN venue v ON v.id = p.venue_id
@@ -188,28 +189,9 @@ class AuthorModel {
     const result = await this.db.query_executor(query, params);
     return result.rows;
   };
-  // Full author profile: basic info + h-index + citation stats.
-  // Computes h-index inline via CTE — works for all authors, including
-  // those without a researcher account (same algorithm as compute_h_index() in functions.sql).
+  // Full author profile: basic info + h-index + citation stats via SQL functions.
   getAuthorProfile = async (authorId) => {
     const query = `
-      WITH paper_cites AS (
-          SELECT pa.paper_id,
-                 COUNT(c.citing_id)::INT AS cites
-          FROM paper_author pa
-          LEFT JOIN citation c ON c.cited_id = pa.paper_id
-          WHERE pa.author_id = $1
-          GROUP BY pa.paper_id
-      ),
-      h_calc AS (
-          SELECT COALESCE(MAX(ranked.rnk), 0) AS h_index
-          FROM (
-              SELECT cites,
-                     ROW_NUMBER() OVER (ORDER BY cites DESC) AS rnk
-              FROM paper_cites
-          ) ranked
-          WHERE ranked.cites >= ranked.rnk
-      )
       SELECT
           a.id,
           a.name,
@@ -220,8 +202,8 @@ class AuthorModel {
           u.profile_pic_url,
           u.bio,
           (SELECT COUNT(*)::INT FROM paper_author pa2 WHERE pa2.author_id = a.id) AS paper_count,
-          COALESCE((SELECT SUM(cites)::INT FROM paper_cites), 0)                  AS total_citations,
-          (SELECT h_index FROM h_calc)                                            AS h_index
+          get_author_citation_count(a.id)                                          AS total_citations,
+          compute_h_index(a.id)                                                    AS h_index
       FROM author a
       LEFT JOIN researcher res ON res.author_id = a.id
       LEFT JOIN "user" u       ON u.id = res.user_id
@@ -229,6 +211,53 @@ class AuthorModel {
     `;
     const result = await this.db.query_executor(query, [authorId]);
     return result.rows[0] || null;
+  };
+
+  getCollaboratorsByAuthor = async (authorId) => {
+    const query = `
+      WITH shared AS (
+          SELECT
+              co.author_id AS collaborator_id,
+              p.id AS paper_id,
+              p.title,
+              p.publication_date,
+              p.doi,
+              p.is_retracted,
+              v.name AS venue_name,
+              COUNT(c.citing_id)::INT AS citation_count
+          FROM paper_author pa
+          JOIN paper_author co ON co.paper_id = pa.paper_id AND co.author_id <> pa.author_id
+          JOIN paper p ON p.id = pa.paper_id
+          JOIN venue v ON v.id = p.venue_id
+          LEFT JOIN citation c ON c.cited_id = p.id
+          WHERE pa.author_id = $1
+          GROUP BY co.author_id, p.id, v.id
+      )
+      SELECT
+          a.id AS collaborator_id,
+          a.name AS collaborator_name,
+          a.orc_id,
+          COUNT(*)::INT AS shared_paper_count,
+          JSON_AGG(
+              JSON_BUILD_OBJECT(
+                  'id', shared.paper_id,
+                  'title', shared.title,
+                  'publication_date', shared.publication_date,
+                  'doi', shared.doi,
+                  'is_retracted', shared.is_retracted,
+                  'venue_name', shared.venue_name,
+                  'citation_count', shared.citation_count
+              )
+              ORDER BY shared.publication_date DESC NULLS LAST, shared.paper_id DESC
+          ) AS shared_papers
+      FROM shared
+      JOIN author a ON a.id = shared.collaborator_id
+      GROUP BY a.id, a.name, a.orc_id
+      ORDER BY shared_paper_count DESC, a.name ASC;
+    `;
+
+    const result = await this.db.query_executor(query, [authorId]);
+    return result.rows;
   };
 }
 

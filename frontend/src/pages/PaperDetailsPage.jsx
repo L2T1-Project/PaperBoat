@@ -1,12 +1,22 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import api from "../api/axios";
+import { useAuth } from "../context/AuthContext";
 
 function PaperDetailsPage() {
   const { id } = useParams();
+  const { user } = useAuth();
+  const currentUserId = user?.userId;
+  const currentRole = user?.role;
   const [paper, setPaper] = useState(null);
   const [topics, setTopics] = useState([]);
   const [citedByPapers, setCitedByPapers] = useState([]);
+  const [researcherAuthorId, setResearcherAuthorId] = useState(null);
+  const [existingClaim, setExistingClaim] = useState(null);
+  const [authorPosition, setAuthorPosition] = useState("");
+  const [showClaimForm, setShowClaimForm] = useState(false);
+  const [isSubmittingClaim, setIsSubmittingClaim] = useState(false);
+  const [claimMessage, setClaimMessage] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
@@ -16,15 +26,35 @@ function PaperDetailsPage() {
         setIsLoading(true);
         setError("");
 
-        const [paperRes, topicsRes, citedByRes] = await Promise.all([
+        const requests = [
           api.get(`/papers/${id}`),
           api.get(`/papers/${id}/topics`),
           api.get(`/papers/${id}/cited-by`),
-        ]);
+        ];
+
+        if (currentRole === "researcher" && currentUserId) {
+          requests.push(api.get(`/researchers/${currentUserId}`));
+          requests.push(api.get(`/researchers/${currentUserId}/claims`));
+        }
+
+        const [paperRes, topicsRes, citedByRes, researcherRes, claimsRes] = await Promise.all(requests);
 
         setPaper(paperRes.data?.data || null);
         setTopics(topicsRes.data?.data || []);
         setCitedByPapers(citedByRes.data?.data || []);
+
+        if (researcherRes?.data?.data?.author_id) {
+          setResearcherAuthorId(Number(researcherRes.data.data.author_id));
+        } else {
+          setResearcherAuthorId(null);
+        }
+
+        if (claimsRes?.data?.data) {
+          const claim = claimsRes.data.data.find((item) => Number(item.paper_id) === Number(id)) || null;
+          setExistingClaim(claim);
+        } else {
+          setExistingClaim(null);
+        }
       } catch (err) {
         console.error("Failed loading paper details:", err);
         setError("Could not load paper details.");
@@ -34,7 +64,51 @@ function PaperDetailsPage() {
     };
 
     fetchAll();
-  }, [id]);
+  }, [id, currentRole, currentUserId]);
+
+  const isResearchersPaper = useMemo(() => {
+    if (currentRole !== "researcher" || !researcherAuthorId || !Array.isArray(paper?.authors)) {
+      return false;
+    }
+
+    return paper.authors.some((author) => Number(author.id) === Number(researcherAuthorId));
+  }, [currentRole, researcherAuthorId, paper]);
+
+  const submitClaim = async (event) => {
+    event.preventDefault();
+    setClaimMessage("");
+
+    const parsedPosition = Number(authorPosition);
+    if (!Number.isInteger(parsedPosition) || parsedPosition < 1) {
+      setClaimMessage("Author position must be a positive integer.");
+      return;
+    }
+
+    if (!currentUserId || currentRole !== "researcher") {
+      setClaimMessage("Only researchers can create paper claims.");
+      return;
+    }
+
+    try {
+      setIsSubmittingClaim(true);
+      await api.post(`/researchers/${currentUserId}/claims`, {
+        paper_id: Number(id),
+        position: parsedPosition,
+      });
+
+      setExistingClaim({
+        paper_id: Number(id),
+        position: parsedPosition,
+        claim_status: "Pending",
+      });
+      setShowClaimForm(false);
+      setClaimMessage("Claim submitted successfully. Admins have been notified.");
+    } catch (err) {
+      setClaimMessage(err?.response?.data?.message || "Could not submit claim.");
+    } finally {
+      setIsSubmittingClaim(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -62,7 +136,60 @@ function PaperDetailsPage() {
         </div>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h1 className="text-2xl font-bold text-slate-900">{paper.title}</h1>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h1 className="text-2xl font-bold text-slate-900">{paper.title}</h1>
+
+            {currentRole === "researcher" ? (
+              <div className="flex items-center gap-2">
+                {isResearchersPaper ? (
+                  <span className="rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                    Your paper
+                  </span>
+                ) : existingClaim ? (
+                  <span className="rounded-full border border-slate-300 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                    Claim status: {existingClaim.claim_status}
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowClaimForm((prev) => !prev)}
+                    className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                  >
+                    {showClaimForm ? "Cancel" : "Claim Paper"}
+                  </button>
+                )}
+              </div>
+            ) : null}
+          </div>
+
+          {currentRole === "researcher" && !isResearchersPaper && !existingClaim && showClaimForm ? (
+            <form onSubmit={submitClaim} className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">Author Position</label>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <input
+                  type="number"
+                  min="1"
+                  value={authorPosition}
+                  onChange={(event) => setAuthorPosition(event.target.value)}
+                  placeholder="Enter your author position"
+                  className="w-52 rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none focus:border-slate-700"
+                />
+                <button
+                  type="submit"
+                  disabled={isSubmittingClaim}
+                  className="rounded-md bg-slate-800 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-900 disabled:opacity-50"
+                >
+                  {isSubmittingClaim ? "Submitting..." : "Submit Claim"}
+                </button>
+              </div>
+              {claimMessage ? <p className="mt-2 text-xs text-slate-600">{claimMessage}</p> : null}
+            </form>
+          ) : null}
+
+          {claimMessage && (!showClaimForm || existingClaim) ? (
+            <p className="mt-3 text-xs text-slate-600">{claimMessage}</p>
+          ) : null}
+
           <div className="mt-3 flex flex-wrap gap-2 text-sm">
             {paper.doi ? (
               <a

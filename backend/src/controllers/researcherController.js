@@ -9,6 +9,18 @@ class ResearcherController {
     this.userModel = new UserModel();
   }
 
+  ensureResearcherSelf = (req, res, researcherId) => {
+    if (req.user?.role !== "researcher") {
+      return res.status(403).json({ success: false, message: "Only researchers can access claims." });
+    }
+
+    if (Number(req.auth?.userId) !== Number(researcherId)) {
+      return res.status(403).json({ success: false, message: "Forbidden: you can only access your own claims." });
+    }
+
+    return null;
+  };
+
   createResearcher = async (req, res) => {
     try {
       const {
@@ -164,6 +176,9 @@ class ResearcherController {
       const { id } = req.params; // researcher user_id
       const { paper_id, position } = req.body;
 
+      const authError = this.ensureResearcherSelf(req, res, id);
+      if (authError) return authError;
+
       if (isNaN(id)) {
         return res
           .status(400)
@@ -216,6 +231,9 @@ class ResearcherController {
     try {
       const { id } = req.params;
 
+      const authError = this.ensureResearcherSelf(req, res, id);
+      if (authError) return authError;
+
       if (isNaN(id)) {
         return res
           .status(400)
@@ -239,6 +257,9 @@ class ResearcherController {
   deletePaperClaim = async (req, res) => {
     try {
       const { id, paperId } = req.params;
+
+      const authError = this.ensureResearcherSelf(req, res, id);
+      if (authError) return authError;
 
       if (isNaN(id) || isNaN(paperId)) {
         return res

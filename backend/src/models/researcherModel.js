@@ -118,15 +118,28 @@ class ResearcherModel {
   };
 
   createPaperClaim = async (researcherId, paperId, position) => {
-    const query = `
+    const client = await this.db.pool.connect();
+    try {
+      await client.query("BEGIN");
+
+      const insertQuery = `
             INSERT INTO paper_claim (researcher_id, paper_id, position, status_id)
-            VALUES ($1, $2, $3, (SELECT id FROM status WHERE status_name = 'Pending'))
+            VALUES ($1, $2, $3, $4)
             RETURNING researcher_id, paper_id, position, status_id, claimed_at;
         `;
 
-    const params = [researcherId, paperId, position];
-    const result = await this.db.query_executor(query, params);
-    return result.rows[0];
+      const result = await client.query(insertQuery, [researcherId, paperId, position, 5]);
+
+      await client.query("CALL notify_new_claim($1, $2);", [researcherId, paperId]);
+
+      await client.query("COMMIT");
+      return result.rows[0];
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
   };
 
   getPaperClaimsByResearcher = async (researcherId) => {

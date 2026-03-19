@@ -26,6 +26,17 @@ class ReviewController {
                 return res.status(400).json({ error: 'Provide either paper_id or parent_review_id, not both' });
             }
             const review = await this.reviewModel.createReview(researcher_id, paper_id, parent_review_id, text);
+
+            try {
+                const reviewedPaperId = review.paper_id || await this.reviewModel.getPaperIdForReviewThread(review.id);
+                if (reviewedPaperId) {
+                    await this.reviewModel.notifyPaperReview(review.id, reviewedPaperId);
+                }
+            } catch (notifyErr) {
+                // Do not fail review creation if notification procedure is unavailable.
+                console.error('ReviewController.createReview notify_paper_review:', notifyErr);
+            }
+
             return res.status(201).json(review);
         } catch (err) {
             if (err.code === '23503') return res.status(400).json({ error: 'Researcher, paper, or parent review not found' });
@@ -138,6 +149,17 @@ class ReviewController {
                 return res.status(400).json({ error: 'is_upvote is required' });
             }
             const vote = await this.reviewModel.castVote(researcher_id, id, is_upvote);
+
+            try {
+                const review = await this.reviewModel.getReviewById(id);
+                if (review && Number(review.researcher_id) !== Number(researcher_id)) {
+                    await this.reviewModel.notifyReviewVote(id, Boolean(is_upvote), researcher_id);
+                }
+            } catch (notifyErr) {
+                // Do not fail vote action if notification procedure is unavailable.
+                console.error('ReviewController.castVote notify_review_vote:', notifyErr);
+            }
+
             return res.status(200).json(vote);
         } catch (err) {
             if (err.code === '23503') return res.status(400).json({ error: 'Researcher or review not found' });

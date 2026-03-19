@@ -188,13 +188,18 @@ class UserController {
       clearFailedLogins(clientIp);
 
       let role = "user";
-      const researcher = await this.userModel.checkResearcherRole(user.id);
-      if (researcher) {
-        role = "researcher";
+      const admin = await this.userModel.checkAdminRole(user.id);
+      if (admin) {
+        role = "admin";
       } else {
-        const venueUser = await this.userModel.checkVenueUserRole(user.id);
-        if (venueUser) {
-          role = "venue_user";
+        const researcher = await this.userModel.checkResearcherRole(user.id);
+        if (researcher) {
+          role = "researcher";
+        } else {
+          const venueUser = await this.userModel.checkVenueUserRole(user.id);
+          if (venueUser) {
+            role = "venue_user";
+          }
         }
       }
 

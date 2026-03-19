@@ -18,12 +18,17 @@ function parseStoredUser(rawUser) {
       typeof parsed.role === "string"
     ) {
       const normalizedUserId = Number(parsed.userId);
+      const normalizedRole = parsed.role.trim().toLowerCase();
 
-      if (Number.isNaN(normalizedUserId)) {
+      if (Number.isNaN(normalizedUserId) || !normalizedRole) {
         return null;
       }
 
-      return parsed;
+      return {
+        ...parsed,
+        userId: normalizedUserId,
+        role: normalizedRole,
+      };
     }
 
     return null;
@@ -43,7 +48,7 @@ export function AuthProvider({ children }) {
 
     if (storedToken && storedUser) {
       setToken(storedToken);
-      setUser({ ...storedUser, userId: Number(storedUser.userId) });
+      setUser(storedUser);
       setIsAuthReady(true);
       return;
     }
@@ -57,9 +62,10 @@ export function AuthProvider({ children }) {
     const normalizedUser = {
       ...userObj,
       userId: Number(userObj?.userId),
+      role: String(userObj?.role || "").trim().toLowerCase(),
     };
 
-    if (Number.isNaN(normalizedUser.userId)) {
+    if (Number.isNaN(normalizedUser.userId) || !normalizedUser.role) {
       return;
     }
 
