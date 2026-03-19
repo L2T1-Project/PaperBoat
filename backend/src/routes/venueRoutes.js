@@ -23,6 +23,9 @@ class VenueRouter {
 
         this.#router.post('/',                    this.#controller.createVenue);
         this.#router.get('/',                     this.#controller.getAllVenues);
+        this.#router.get('/:id/stats',            this.#controller.getVenueStatsHandler);
+        this.#router.get('/:id/papers',           this.#controller.getVenuePapers);
+        this.#router.get('/:id/authors',          this.#controller.getVenueAuthors);
         this.#router.get('/:id',                  this.#controller.getVenueById);
         this.#router.put('/:id',                  this.#controller.updateVenue);
         this.#router.delete('/:id',               this.#controller.deleteVenue);

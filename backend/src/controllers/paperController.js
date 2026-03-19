@@ -1,8 +1,12 @@
 const PaperModel = require('../models/paperModel.js');
+const NotificationModel = require('../models/notificationModel.js');
+const DB_Connection = require('../database/db.js');
 
 class PaperController {
     constructor(){
         this.paperModel = new PaperModel();
+        this.notificationModel = new NotificationModel();
+        this.db = DB_Connection.getInstance();
     }
 
     createPaper = async(req, res) => {
@@ -19,6 +23,19 @@ class PaperController {
             const paper = await this.paperModel.createPaper({
                 title, publication_date, pdf_url, doi, is_retracted, github_repo, venue_id
             });
+
+            // Notify followers that a new paper was published (researcher role only)
+            if (req.user?.role === 'researcher') {
+              const authorUserId = req.auth.userId;
+              this.db.query_executor(`SELECT full_name FROM "user" WHERE id = $1`, [authorUserId])
+                .then(r => {
+                  const authorName = r.rows[0]?.full_name ?? 'A researcher';
+                  return this.notificationModel.notifyFollowersPaperPublished(
+                    authorUserId, paper.id, paper.title, authorName
+                  );
+                })
+                .catch(err => console.error('notifyFollowersPaperPublished error:', err));
+            }
 
             return res.status(201).json({
                 success: true,

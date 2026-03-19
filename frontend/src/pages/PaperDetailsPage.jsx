@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
+import SaveButton from '../components/SaveButton';
 
 function PaperDetailsPage() {
   const { id } = useParams();
@@ -137,7 +138,10 @@ function PaperDetailsPage() {
 
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h1 className="text-2xl font-bold text-slate-900">{paper.title}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-slate-900">{paper.title}</h1>
+              <SaveButton paperId={paper.id} />
+            </div>
 
             {currentRole === "researcher" ? (
               <div className="flex items-center gap-2">

@@ -143,10 +143,13 @@ class VenueController {
         }
 
         return res.status(200).json({
-          id: venue.id,
-          name: venue.name,
-          issn: venue.issn,
-          publisher: { id: venue.publisher_id, name: venue.publisher_name },
+          success: true,
+          data: {
+            id: venue.id,
+            name: venue.name,
+            issn: venue.issn,
+            publisher: { id: venue.publisher_id, name: venue.publisher_name },
+          }
         });
       }
 
@@ -166,11 +169,11 @@ class VenueController {
           publisher: { id: venue.publisher_id, name: venue.publisher_name },
         }));
 
-        return res.status(200).json(formatted);
+        return res.status(200).json({ success: true, data: formatted });
       }
 
       const venues = await this.venueModel.getAllVenues();
-      return res.status(200).json(venues);
+      return res.status(200).json({ success: true, data: venues });
     } catch (err) {
       console.error("VenueController.getAllVenues:", err);
       return res.status(500).json({ error: "Internal server error" });
@@ -183,7 +186,7 @@ class VenueController {
       const venue = await this.venueModel.getVenueById(id);
 
       if (!venue) return res.status(404).json({ error: "Venue not found" });
-      return res.status(200).json(venue);
+      return res.status(200).json({ success: true, data: venue });
     } catch (err) {
       console.error("VenueController.getVenueById:", err);
       return res.status(500).json({ error: "Internal server error" });
@@ -296,6 +299,40 @@ class VenueController {
     } catch (err) {
       console.error("VenueController.lookupByName:", err);
       return res.status(500).json({ error: "Internal server error" });
+    }
+  };
+
+  // ── Venue Profile Endpoints ────────────────────────────────────────────
+
+  getVenueStatsHandler = async (req, res) => {
+    try {
+      const stats = await this.venueModel.getVenueStats(req.params.id);
+      res.json({ success: true, data: stats });
+    } catch (err) {
+      console.error('getVenueStats error:', err);
+      res.status(500).json({ success: false, message: 'Failed to fetch venue stats.' });
+    }
+  };
+
+  getVenuePapers = async (req, res) => {
+    try {
+      const { page = 1, limit = 20 } = req.query;
+      const offset = (Number(page) - 1) * Number(limit);
+      const papers = await this.venueModel.getVenuePapers(req.params.id, Number(limit), offset);
+      res.json({ success: true, data: papers });
+    } catch (err) {
+      console.error('getVenuePapers error:', err);
+      res.status(500).json({ success: false, message: 'Failed to fetch venue papers.' });
+    }
+  };
+
+  getVenueAuthors = async (req, res) => {
+    try {
+      const authors = await this.venueModel.getVenueAuthors(req.params.id);
+      res.json({ success: true, data: authors });
+    } catch (err) {
+      console.error('getVenueAuthors error:', err);
+      res.status(500).json({ success: false, message: 'Failed to fetch venue authors.' });
     }
   };
 }

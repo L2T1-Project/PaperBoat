@@ -9,6 +9,7 @@ class NotificationRouter {
     }
 
     #initRoutes() {
+        this.router.get('/',                                     this.notificationController.getNotifications);
         this.router.get('/user/:userId',                         this.notificationController.getNotificationsByUser);
         this.router.patch('/read-all',                          this.notificationController.markAllAsRead);
 
