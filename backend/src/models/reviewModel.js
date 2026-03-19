@@ -47,6 +47,29 @@ class ReviewModel {
         return result.rows[0] || null;
     }
 
+    getPaperIdForReviewThread = async (reviewId) => {
+        const query = `
+            WITH RECURSIVE thread AS (
+                SELECT id, paper_id, parent_review_id
+                FROM review
+                WHERE id = $1
+
+                UNION ALL
+
+                SELECT r.id, r.paper_id, r.parent_review_id
+                FROM review r
+                JOIN thread t ON t.parent_review_id = r.id
+            )
+            SELECT paper_id
+            FROM thread
+            WHERE paper_id IS NOT NULL
+            LIMIT 1;
+        `;
+
+        const result = await this.db.query_executor(query, [reviewId]);
+        return result.rows[0]?.paper_id || null;
+    }
+
     getReviewsByPaper = async (paperId) => {
         const query = `
             SELECT
@@ -129,6 +152,16 @@ class ReviewModel {
         `;
         const result = await this.db.query_executor(query, [researcherId, reviewId, isUpvote]);
         return result.rows[0];
+    }
+
+    notifyPaperReview = async (reviewId, paperId) => {
+        const query = `CALL notify_paper_review($1, $2);`;
+        await this.db.query_executor(query, [reviewId, paperId]);
+    }
+
+    notifyReviewVote = async (reviewId, isUpvote, voterUserId) => {
+        const query = `CALL notify_review_vote($1, $2, $3);`;
+        await this.db.query_executor(query, [reviewId, isUpvote, voterUserId]);
     }
 
     removeVote = async (researcherId, reviewId) => {

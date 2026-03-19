@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import api from "../api/axios";
 
@@ -60,8 +60,12 @@ export default function AuthorPage() {
   const { id } = useParams();
   const [profile, setProfile] = useState(null);
   const [papers, setPapers] = useState([]);
+  const [collaborators, setCollaborators] = useState([]);
+  const [expandedCollaboratorId, setExpandedCollaboratorId] = useState(null);
+  const [showAllPapers, setShowAllPapers] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const collaboratorsScrollRef = useRef(null);
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -69,13 +73,15 @@ export default function AuthorPage() {
         setIsLoading(true);
         setError("");
 
-        const [profileRes, papersRes] = await Promise.all([
+        const [profileRes, papersRes, collaboratorsRes] = await Promise.all([
           api.get(`/authors/${id}/profile`),
           api.get(`/authors/${id}/papers`),
+          api.get(`/authors/${id}/collaborators`),
         ]);
 
         setProfile(profileRes.data?.data ?? null);
         setPapers(papersRes.data?.data ?? []);
+        setCollaborators(collaboratorsRes.data?.data ?? []);
       } catch (err) {
         console.error("AuthorPage fetch failed:", err);
         setError("Could not load author profile.");
@@ -116,6 +122,17 @@ export default function AuthorPage() {
     .slice(0, 2)
     .join("")
     .toUpperCase();
+
+  const scrollCollaborators = (direction) => {
+    if (!collaboratorsScrollRef.current) return;
+    collaboratorsScrollRef.current.scrollBy({
+      left: direction === "left" ? -420 : 420,
+      behavior: "smooth",
+    });
+  };
+
+  const hasMorePapers = papers.length > 5;
+  const visiblePapers = showAllPapers ? papers : papers.slice(0, 5);
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
@@ -191,28 +208,135 @@ export default function AuthorPage() {
 
       {/* Papers list */}
       <section>
-        <h2 className="mb-4 text-lg font-semibold text-slate-800">
-          Papers
-          {papers.length > 0 && (
-            <span className="ml-2 text-sm font-normal text-slate-400">
-              ({papers.length})
-            </span>
-          )}
-        </h2>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-slate-800">
+            Papers
+            {papers.length > 0 && (
+              <span className="ml-2 text-sm font-normal text-slate-400">
+                ({papers.length})
+              </span>
+            )}
+          </h2>
+          {hasMorePapers ? (
+            <button
+              type="button"
+              onClick={() => setShowAllPapers((prev) => !prev)}
+              className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+            >
+              {showAllPapers ? "Show less" : `Show all (${papers.length})`}
+              <span>{showAllPapers ? "▴" : "▾"}</span>
+            </button>
+          ) : null}
+        </div>
 
         {papers.length === 0 ? (
           <p className="text-sm text-slate-400">
             No papers found for this author.
           </p>
         ) : (
-          <div className="flex flex-col gap-2">
-            {papers.map((paper) => (
+          <div className={`flex flex-col gap-2 ${showAllPapers ? "max-h-[28rem] overflow-y-auto pr-1" : ""}`}>
+            {visiblePapers.map((paper) => (
               <PaperRow
                 key={paper.id}
                 paper={paper}
                 position={paper.position}
               />
             ))}
+          </div>
+        )}
+      </section>
+
+      {/* Collaborators */}
+      <section className="mt-10 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-slate-800">Collaborating Authors</h2>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => scrollCollaborators("left")}
+              className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100"
+            >
+              ←
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollCollaborators("right")}
+              className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100"
+            >
+              →
+            </button>
+          </div>
+        </div>
+
+        {!collaborators.length ? (
+          <p className="mt-3 text-sm text-slate-500">No collaborators found for this author.</p>
+        ) : (
+          <div ref={collaboratorsScrollRef} className="mt-4 flex gap-3 overflow-x-auto pb-2">
+            {collaborators.map((collaborator) => {
+              const isExpanded = expandedCollaboratorId === collaborator.collaborator_id;
+              const sharedPapers = collaborator.shared_papers || [];
+
+              return (
+                <article
+                  key={collaborator.collaborator_id}
+                  className="min-w-[320px] rounded-xl border border-slate-200 bg-slate-50 p-4"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <Link
+                        to={`/authors/${collaborator.collaborator_id}`}
+                        className="text-sm font-semibold text-slate-900 hover:text-slate-700 hover:underline"
+                      >
+                        {collaborator.collaborator_name}
+                      </Link>
+                      <p className="mt-1 text-xs text-slate-500">
+                        Shared papers: {collaborator.shared_paper_count || 0}
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setExpandedCollaboratorId((prev) =>
+                          prev === collaborator.collaborator_id ? null : collaborator.collaborator_id,
+                        )
+                      }
+                      className="rounded-md border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                      aria-label={`Toggle shared papers for ${collaborator.collaborator_name}`}
+                    >
+                      {isExpanded ? "▴" : "▾"}
+                    </button>
+                  </div>
+
+                  {isExpanded ? (
+                    <div className="mt-3 space-y-2 border-t border-slate-200 pt-3">
+                      {sharedPapers.length ? (
+                        sharedPapers.map((paper) => (
+                          <Link
+                            key={paper.id}
+                            to={`/papers/${paper.id}`}
+                            className="block rounded-lg border border-slate-200 bg-white px-3 py-2 hover:border-slate-300"
+                          >
+                            <p className="text-sm font-medium text-slate-800">{paper.title}</p>
+                            <p className="mt-1 text-xs text-slate-500">
+                              {paper.venue_name || "N/A"}
+                              {paper.publication_date
+                                ? ` • ${new Date(paper.publication_date).getFullYear()}`
+                                : ""}
+                              {paper.citation_count != null
+                                ? ` • ${paper.citation_count} cite${paper.citation_count !== 1 ? "s" : ""}`
+                                : ""}
+                            </p>
+                          </Link>
+                        ))
+                      ) : (
+                        <p className="text-xs text-slate-500">No shared papers found.</p>
+                      )}
+                    </div>
+                  ) : null}
+                </article>
+              );
+            })}
           </div>
         )}
       </section>

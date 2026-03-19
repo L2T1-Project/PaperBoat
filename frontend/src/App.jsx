@@ -11,6 +11,8 @@ import PapersDiscoveryPage from "./pages/PapersDiscoveryPage";
 import SignupPage from "./pages/SignupPage";
 import AuthorPage from "./pages/AuthorPage";
 import AuthorSearchPage from "./pages/AuthorSearchPage";
+import ResearcherClaimsPage from "./pages/ResearcherClaimsPage";
+import AdminClaimsPage from "./pages/AdminClaimsPage";
 
 function App() {
   return (
@@ -38,6 +40,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/researchers/:id/claims"
+            element={
+              <ProtectedRoute allowedRoles={["researcher"]} requireUserIdParam="id">
+                <ResearcherClaimsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/claims"
+            element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <AdminClaimsPage />
               </ProtectedRoute>
             }
           />

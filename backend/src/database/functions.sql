@@ -38,22 +38,19 @@ END;
 $$;
 
 
-CREATE OR REPLACE FUNCTION get_researcher_citation_count(researcher_user_id INTEGER)
+CREATE OR REPLACE FUNCTION get_author_citation_count(target_author_id INTEGER)
 RETURNS INTEGER
 LANGUAGE plpgsql
 STABLE
 AS $$
 DECLARE
-    linked_author_id INTEGER;
     total INTEGER := 0;
     curr_paper_id INTEGER;
 BEGIN
-    linked_author_id := get_author_id(researcher_user_id);
-
     FOR curr_paper_id IN
         SELECT paper_id
         FROM paper_author
-        WHERE author_id = linked_author_id
+        WHERE author_id = target_author_id
     LOOP
         total := total + get_paper_citation_count(curr_paper_id);
     END LOOP;
@@ -63,27 +60,38 @@ END;
 $$;
 
 
--- Computes the h-index for a researcher.
--- h-index = the largest h where the researcher has at least h papers,
--- each cited at least h times.
-CREATE OR REPLACE FUNCTION compute_h_index(researcher_user_id INTEGER)
+CREATE OR REPLACE FUNCTION get_researcher_citation_count(researcher_user_id INTEGER)
 RETURNS INTEGER
 LANGUAGE plpgsql
 STABLE
 AS $$
 DECLARE
     linked_author_id INTEGER;
+BEGIN
+    linked_author_id := get_author_id(researcher_user_id);
+    RETURN get_author_citation_count(linked_author_id);
+END;
+$$;
+
+
+-- Computes the h-index for an author.
+-- h-index = the largest h where the author has at least h papers,
+-- each cited at least h times.
+CREATE OR REPLACE FUNCTION compute_h_index(target_author_id INTEGER)
+RETURNS INTEGER
+LANGUAGE plpgsql
+STABLE
+AS $$
+DECLARE
     h INTEGER := 0;
     rank INTEGER := 0;
     cite_count INTEGER;
 BEGIN
-    linked_author_id := get_author_id(researcher_user_id);
-
     -- cite count wise desc sorting
     FOR cite_count IN
         SELECT get_paper_citation_count(pa.paper_id) AS c
         FROM paper_author pa
-        WHERE pa.author_id = linked_author_id
+        WHERE pa.author_id = target_author_id
         ORDER BY c DESC
     LOOP
         rank := rank + 1;

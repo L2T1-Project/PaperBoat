@@ -119,9 +119,58 @@ export default function DashboardPage() {
           </article>
           <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-xs uppercase tracking-wide text-slate-500">Suggested Action</p>
-            <p className="mt-2 text-sm font-medium text-slate-800">Review a paper in your domain</p>
+            {role === "researcher" ? (
+              <div className="mt-2 space-y-2">
+                <p className="text-sm font-medium text-slate-800">Submit and track paper claims</p>
+                <Link
+                  to={`/researchers/${userId}/claims`}
+                  className="inline-block rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                >
+                  See My Claims
+                </Link>
+              </div>
+            ) : null}
+            {role === "admin" ? (
+              <div className="mt-2 space-y-2">
+                <p className="text-sm font-medium text-slate-800">Moderate pending paper claims</p>
+                <Link
+                  to="/admin/claims"
+                  className="inline-block rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                >
+                  Open Claim Queue
+                </Link>
+              </div>
+            ) : null}
+            {role !== "researcher" && role !== "admin" ? (
+              <p className="mt-2 text-sm font-medium text-slate-800">Review a paper in your domain</p>
+            ) : null}
           </article>
         </section>
+
+        {role === "admin" ? (
+          <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-xs uppercase tracking-wide text-slate-500">Task</p>
+              <p className="mt-2 text-sm font-semibold text-slate-900">Pending Claims Queue</p>
+              <p className="mt-1 text-xs text-slate-600">Approve or decline incoming authorship claims.</p>
+            </article>
+            <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-xs uppercase tracking-wide text-slate-500">Task</p>
+              <p className="mt-2 text-sm font-semibold text-slate-900">Recent Decisions</p>
+              <p className="mt-1 text-xs text-slate-600">Track recently approved or declined claims.</p>
+            </article>
+            <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-xs uppercase tracking-wide text-slate-500">Task</p>
+              <p className="mt-2 text-sm font-semibold text-slate-900">Notification Health</p>
+              <p className="mt-1 text-xs text-slate-600">Monitor whether claim notifications are delivered.</p>
+            </article>
+            <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-xs uppercase tracking-wide text-slate-500">Task</p>
+              <p className="mt-2 text-sm font-semibold text-slate-900">Moderation Shortcuts</p>
+              <p className="mt-1 text-xs text-slate-600">Quick access to claims and admin workflows.</p>
+            </article>
+          </section>
+        ) : null}
 
         {role === "researcher" ? (
           <section className="space-y-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -148,7 +197,7 @@ export default function DashboardPage() {
             ) : null}
 
             <div className="pt-2">
-              <p className="mb-2 text-sm font-medium text-slate-700">All papers (horizontal scroll)</p>
+              <p className="mb-2 text-sm font-medium text-slate-700">All papers</p>
               <div ref={researcherScrollRef} className="flex gap-3 overflow-x-auto pb-2">
                 {researcherAllPapers.map((paper) => (
                   <article key={paper.paper_id} className="min-w-[280px] rounded-xl border border-slate-200 bg-white p-4">
