@@ -209,6 +209,71 @@ class VenueModel {
     const result = await this.db.query_executor(query, params);
     return result.rows;
   };
+
+  // ── Venue Profile Endpoints ────────────────────────────────────────────
+
+  getVenueStats = async (venueId) => {
+    const query = `
+      SELECT
+        COUNT(DISTINCT paper.id)           AS paper_count,
+        COUNT(DISTINCT pa.author_id)       AS author_count,
+        COALESCE(SUM(cite_counts.cnt), 0)  AS citation_count
+      FROM venue v
+      LEFT JOIN paper ON paper.venue_id = v.id
+      LEFT JOIN paper_author pa ON pa.paper_id = paper.id
+      LEFT JOIN (
+        SELECT citing_id, COUNT(*) AS cnt
+        FROM citation GROUP BY citing_id
+      ) cite_counts ON cite_counts.citing_id = paper.id
+      WHERE v.id = $1
+    `;
+    const result = await this.db.query_executor(query, [venueId]);
+    return result.rows[0];
+  };
+
+  getVenuePapers = async (venueId, limit = 20, offset = 0) => {
+    const query = `
+      SELECT
+        p.id, p.title, p.publication_date, p.doi, p.is_retracted, p.pdf_url,
+        COUNT(c.cited_id) AS citation_count,
+        COALESCE(
+          json_agg(
+            json_build_object('id', a.id, 'name', a.name)
+            ORDER BY pa.position
+          ) FILTER (WHERE a.id IS NOT NULL),
+          '[]'
+        ) AS authors
+      FROM paper p
+      LEFT JOIN citation     c  ON c.citing_id  = p.id
+      LEFT JOIN paper_author pa ON pa.paper_id  = p.id
+      LEFT JOIN author       a  ON a.id         = pa.author_id
+      WHERE p.venue_id = $1
+      GROUP BY p.id
+      ORDER BY p.publication_date DESC NULLS LAST
+      LIMIT $2 OFFSET $3
+    `;
+    const result = await this.db.query_executor(query, [venueId, limit, offset]);
+    return result.rows;
+  };
+
+  getVenueAuthors = async (venueId) => {
+    const query = `
+      SELECT
+        a.id, a.name, a.orc_id,
+        COUNT(DISTINCT pa.paper_id) AS paper_count,
+        r.user_id AS researcher_user_id
+      FROM paper p
+      JOIN paper_author pa ON pa.paper_id  = p.id
+      JOIN author       a  ON a.id         = pa.author_id
+      LEFT JOIN researcher r ON r.author_id = a.id
+      WHERE p.venue_id = $1
+      GROUP BY a.id, a.name, a.orc_id, r.user_id
+      ORDER BY paper_count DESC
+      LIMIT 50
+    `;
+    const result = await this.db.query_executor(query, [venueId]);
+    return result.rows;
+  };
 }
 
 module.exports = VenueModel;

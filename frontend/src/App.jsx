@@ -13,6 +13,11 @@ import AuthorPage from "./pages/AuthorPage";
 import AuthorSearchPage from "./pages/AuthorSearchPage";
 import ResearcherClaimsPage from "./pages/ResearcherClaimsPage";
 import AdminClaimsPage from "./pages/AdminClaimsPage";
+import VenuesPage from './pages/VenuesPage';
+import VenueProfilePage from './pages/VenueProfilePage';
+import FeedbackPage from './pages/FeedbackPage';
+import AdminFeedbackPage from './pages/AdminFeedbackPage';
+import MyLibraryPage from './pages/MyLibraryPage';
 
 function App() {
   return (
@@ -59,6 +64,22 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* Public venue routes */}
+          <Route path="/venues" element={<VenuesPage />} />
+          <Route path="/venues/:id" element={<VenueProfilePage />} />
+
+          {/* Protected routes — all authenticated users */}
+          <Route path="/feedback" element={<ProtectedRoute><FeedbackPage /></ProtectedRoute>} />
+          <Route path="/feedback/my" element={<ProtectedRoute><FeedbackPage /></ProtectedRoute>} />
+          <Route path="/library" element={<ProtectedRoute><MyLibraryPage /></ProtectedRoute>} />
+
+          {/* Admin only */}
+          <Route
+            path="/admin/feedback"
+            element={<ProtectedRoute allowedRoles={['admin']}><AdminFeedbackPage /></ProtectedRoute>}
+          />
+
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
         <Toaster position="top-right" richColors />

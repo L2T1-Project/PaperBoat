@@ -211,6 +211,23 @@ class NotificationController {
             return res.status(500).json({ success: false, message: 'Internal server error.' });
         }
     }
+
+    // ── Enhanced notification endpoint ────────────────────────────────────
+
+    getNotifications = async (req, res) => {
+        try {
+            const userId = req.auth.userId;
+            const limit  = Math.min(Number(req.query.limit) || 20, 50);
+            const [notifications, unreadCount] = await Promise.all([
+                this.notificationModel.getUserNotificationsEnhanced(userId, limit),
+                this.notificationModel.getUnreadCount(userId),
+            ]);
+            res.json({ success: true, data: { notifications, unreadCount } });
+        } catch (err) {
+            console.error('getNotifications error:', err);
+            res.status(500).json({ success: false, message: 'Failed to fetch notifications.' });
+        }
+    }
 }
 
 module.exports = NotificationController;

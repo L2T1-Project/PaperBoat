@@ -19,6 +19,9 @@ const VenueUserRouter = require("./routes/venueUserRoutes.js");
 const TopicRouter = require("./routes/topicRoutes.js");
 const ReviewRouter = require("./routes/reviewRoutes.js");
 const NotificationRouter = require("./routes/notificationRoutes.js");
+const FollowRouter = require("./routes/followRoutes.js");
+const FeedbackRouter = require("./routes/feedbackRoutes.js");
+const LibraryRouter = require("./routes/libraryRoutes.js");
 
 const app = express();
 app.use(express.json());
@@ -53,6 +56,11 @@ const publicRoutes = [
   { method: "GET", path: "/api/topics/domains" },
   { method: "GET", path: "/api/topics/domains/:domainId/fields" },
   { method: "GET", path: "/api/topics/fields/:fieldId/topics" },
+  { method: "GET", path: "/api/venues" },
+  { method: "GET", path: "/api/venues/:id" },
+  { method: "GET", path: "/api/venues/:id/stats" },
+  { method: "GET", path: "/api/venues/:id/papers" },
+  { method: "GET", path: "/api/venues/:id/authors" },
 ];
 
 function doesPathMatch(routePath, requestPath) {
@@ -129,6 +137,15 @@ app.use("/api/reviews", reviewRouter.getRouter());
 
 const notificationRouter = new NotificationRouter();
 app.use("/api/notifications", notificationRouter.getRouter());
+
+const followRouter = new FollowRouter();
+app.use("/api/follows", followRouter.getRouter());
+
+const feedbackRouter = new FeedbackRouter();
+app.use("/api/feedback", feedbackRouter.getRouter());
+
+const libraryRouter = new LibraryRouter();
+app.use("/api/library", libraryRouter.getRouter());
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

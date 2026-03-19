@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import api from "../api/axios";
+import FollowButton from '../components/FollowButton';
 
 function StatCard({ label, value, tooltip }) {
   return (
@@ -153,7 +154,10 @@ export default function AuthorPage() {
         </div>
 
         <div className="flex-1">
-          <h1 className="text-2xl font-bold text-slate-900">{displayName}</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-slate-900">{displayName}</h1>
+            {profile.user_id && <FollowButton targetUserId={profile.user_id} />}
+          </div>
 
           {profile.username && (
             <p className="mt-0.5 text-sm text-slate-500">@{profile.username}</p>

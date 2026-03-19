@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../api/axios";
-import NotificationBox from "../notifications/NotificationBox";
+import NotificationBell from './NotificationBell';
 
 function NavLink({ to, label, active }) {
   return (
@@ -66,11 +66,30 @@ export default function AppHeader() {
                 label="Authors"
                 active={location.pathname.startsWith("/authors")}
               />
+              <NavLink
+                to="/venues"
+                label="Venues"
+                active={location.pathname.startsWith("/venues")}
+              />
               {isAuthenticated ? (
                 <NavLink
                   to="/dashboard"
                   label="Dashboard"
                   active={location.pathname === "/dashboard"}
+                />
+              ) : null}
+              {isAuthenticated ? (
+                <NavLink
+                  to="/library"
+                  label="My Library"
+                  active={location.pathname === "/library"}
+                />
+              ) : null}
+              {isAuthenticated ? (
+                <NavLink
+                  to="/feedback"
+                  label="Feedback"
+                  active={location.pathname.startsWith("/feedback")}
                 />
               ) : null}
               {isAuthenticated && user?.role === "researcher" ? (
@@ -85,6 +104,13 @@ export default function AppHeader() {
                   to="/admin/claims"
                   label="Claim Queue"
                   active={location.pathname === "/admin/claims"}
+                />
+              ) : null}
+              {isAuthenticated && user?.role === "admin" ? (
+                <NavLink
+                  to="/admin/feedback"
+                  label="Feedback Inbox"
+                  active={location.pathname === "/admin/feedback"}
                 />
               ) : null}
             </>
@@ -104,7 +130,7 @@ export default function AppHeader() {
                   {user?.role || "user"}
                 </span>
               )}
-              <NotificationBox />
+              <NotificationBell />
               <button
                 type="button"
                 onClick={logout}
