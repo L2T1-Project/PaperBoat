@@ -6,17 +6,27 @@ class FollowModel {
   }
 
   followUser = async (followingUserId, followedUserId) => {
-    await this.db.query_executor(
+    const result = await this.db.query_executor(
       `INSERT INTO follows (following_user_id, followed_user_id)
-       VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+       VALUES ($1, $2)
+       ON CONFLICT DO NOTHING
+       RETURNING following_user_id`,
       [followingUserId, followedUserId]
     );
+    return result.rowCount > 0;
   };
 
   unfollowUser = async (followingUserId, followedUserId) => {
     await this.db.query_executor(
       `DELETE FROM follows WHERE following_user_id = $1 AND followed_user_id = $2`,
       [followingUserId, followedUserId]
+    );
+  };
+
+  notifyNewFollower = async (followerUserId, followedUserId) => {
+    await this.db.query_executor(
+      `CALL notify_new_follower($1, $2)`,
+      [followerUserId, followedUserId]
     );
   };
 
@@ -54,12 +64,6 @@ class FollowModel {
     return result.rows;
   };
 
-  getUserFullName = async (userId) => {
-    const result = await this.db.query_executor(
-      `SELECT full_name FROM "user" WHERE id = $1`, [userId]
-    );
-    return result.rows[0]?.full_name ?? 'Someone';
-  };
 }
 
 module.exports = FollowModel;

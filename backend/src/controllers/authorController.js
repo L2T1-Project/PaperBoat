@@ -449,6 +449,23 @@ class AuthorController {
         .json({ success: false, message: "Internal server error." });
     }
   };
+
+  getInstituteHistoryByAuthor = async (req, res) => {
+    try {
+      const { id } = req.params;
+      if (isNaN(id)) {
+        return res.status(400).json({ success: false, message: "id must be a number." });
+      }
+
+      const history = await this.authorModel.getInstituteHistoryByAuthor(Number(id));
+      return res.status(200).json({ success: true, count: history.length, data: history });
+    } catch (error) {
+      console.error("[getInstituteHistoryByAuthor]", error.message);
+      return res
+        .status(500)
+        .json({ success: false, message: "Internal server error." });
+    }
+  };
 }
 
 module.exports = AuthorController;

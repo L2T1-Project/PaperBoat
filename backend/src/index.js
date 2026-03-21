@@ -40,6 +40,7 @@ const publicRoutes = [
   { method: "GET", path: "/api/authors/:id/profile" },
   { method: "GET", path: "/api/authors/:id/papers" },
   { method: "GET", path: "/api/authors/:id/collaborators" },
+  { method: "GET", path: "/api/authors/:id/institutes" },
   { method: "GET", path: "/api/authors/paper/:paperId" },
   { method: "POST", path: "/api/researchers" },
   { method: "GET", path: "/api/venues/lookup/issn" },

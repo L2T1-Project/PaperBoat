@@ -294,6 +294,9 @@ class ResearcherController {
       const { id } = req.params; // researcher user_id
       const { institute_id, from_date, upto_date } = req.body;
 
+      const authError = this.ensureResearcherSelf(req, res, id);
+      if (authError) return authError;
+
       if (isNaN(id)) {
         return res
           .status(400)
@@ -353,6 +356,9 @@ class ResearcherController {
     try {
       const { id } = req.params;
 
+      const authError = this.ensureResearcherSelf(req, res, id);
+      if (authError) return authError;
+
       if (isNaN(id)) {
         return res
           .status(400)
@@ -377,6 +383,9 @@ class ResearcherController {
     try {
       const { id, instituteId } = req.params;
       const { from_date, upto_date } = req.body;
+
+      const authError = this.ensureResearcherSelf(req, res, id);
+      if (authError) return authError;
 
       if (isNaN(id) || isNaN(instituteId)) {
         return res.status(400).json({
@@ -432,6 +441,9 @@ class ResearcherController {
     try {
       const { id, instituteId } = req.params;
       const { from_date } = req.body;
+
+      const authError = this.ensureResearcherSelf(req, res, id);
+      if (authError) return authError;
 
       if (isNaN(id) || isNaN(instituteId)) {
         return res.status(400).json({

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/axios';
+import EmptyState from '../components/common/EmptyState';
 
 function PaperCard({ paper, onUnsave }) {
   const [removing, setRemoving] = useState(false);
@@ -129,7 +130,12 @@ export default function MyLibraryPage() {
             </Link>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-16 text-gray-400"><p>No papers match your search.</p></div>
+          <EmptyState
+            icon="🔎"
+            title="No papers match this search"
+            body="Try a different title or author keyword."
+            className="py-12"
+          />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {filtered.map(p => <PaperCard key={p.id} paper={p} onUnsave={id => setPapers(prev => prev.filter(x => x.id !== id))} />)}

@@ -61,6 +61,7 @@ export default function AuthorPage() {
   const { id } = useParams();
   const [profile, setProfile] = useState(null);
   const [papers, setPapers] = useState([]);
+  const [institutes, setInstitutes] = useState([]);
   const [collaborators, setCollaborators] = useState([]);
   const [expandedCollaboratorId, setExpandedCollaboratorId] = useState(null);
   const [showAllPapers, setShowAllPapers] = useState(false);
@@ -74,15 +75,17 @@ export default function AuthorPage() {
         setIsLoading(true);
         setError("");
 
-        const [profileRes, papersRes, collaboratorsRes] = await Promise.all([
+        const [profileRes, papersRes, collaboratorsRes, institutesRes] = await Promise.all([
           api.get(`/authors/${id}/profile`),
           api.get(`/authors/${id}/papers`),
           api.get(`/authors/${id}/collaborators`),
+          api.get(`/authors/${id}/institutes`),
         ]);
 
         setProfile(profileRes.data?.data ?? null);
         setPapers(papersRes.data?.data ?? []);
         setCollaborators(collaboratorsRes.data?.data ?? []);
+        setInstitutes(institutesRes.data?.data ?? []);
       } catch (err) {
         console.error("AuthorPage fetch failed:", err);
         setError("Could not load author profile.");
@@ -134,6 +137,8 @@ export default function AuthorPage() {
 
   const hasMorePapers = papers.length > 5;
   const visiblePapers = showAllPapers ? papers : papers.slice(0, 5);
+  const followTargetUserId = profile?.user_id ?? profile?.researcher_user_id ?? null;
+  const hasResearcherAccount = Boolean(followTargetUserId);
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
@@ -156,7 +161,7 @@ export default function AuthorPage() {
         <div className="flex-1">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-slate-900">{displayName}</h1>
-            {profile.user_id && <FollowButton targetUserId={profile.user_id} />}
+            {hasResearcherAccount ? <FollowButton targetUserId={followTargetUserId} /> : null}
           </div>
 
           {profile.username && (
@@ -192,7 +197,7 @@ export default function AuthorPage() {
       </div>
 
       {/* Stat cards */}
-      <div className="mb-8 grid grid-cols-3 gap-3 sm:gap-4">
+      <div className={`mb-8 grid gap-3 sm:gap-4 ${hasResearcherAccount ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3"}`}>
         <StatCard label="Papers" value={profile.paper_count} />
         <StatCard label="Citations" value={profile.total_citations} />
         <StatCard
@@ -200,6 +205,9 @@ export default function AuthorPage() {
           value={profile.h_index}
           tooltip="h-index: the largest h such that h papers each have ≥ h citations"
         />
+        {hasResearcherAccount ? (
+          <StatCard label="Followers" value={profile.follower_count ?? 0} />
+        ) : null}
       </div>
 
       {/* h-index explainer */}
@@ -209,6 +217,26 @@ export default function AuthorPage() {
         each cited at least <em>h</em> times. Computed live from citation data
         in the PaperBoat database.
       </div>
+
+      {institutes.length ? (
+        <section className="mb-8 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <h2 className="text-base font-semibold text-slate-800">Institute History</h2>
+          <div className="mt-3 space-y-2">
+            {institutes.map((entry) => (
+              <div
+                key={`${entry.institute_id}-${entry.from_date}`}
+                className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2"
+              >
+                <p className="text-sm font-medium text-slate-800">{entry.institute_name}</p>
+                <p className="mt-1 text-xs text-slate-500">
+                  {entry.from_date} to {entry.upto_date || "Present"}
+                  {entry.country ? ` • ${entry.country}` : ""}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {/* Papers list */}
       <section>

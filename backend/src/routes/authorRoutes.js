@@ -24,6 +24,7 @@ class AuthorRouter {
     this.router.get("/:id/profile", this.authorController.getAuthorProfile);
     this.router.get("/:id/papers", this.authorController.getPapersByAuthor);
     this.router.get("/:id/collaborators", this.authorController.getCollaboratorsByAuthor);
+    this.router.get("/:id/institutes", this.authorController.getInstituteHistoryByAuthor);
     this.router.post("/:id/papers", this.authorController.createPaperAuthor);
     this.router.delete(
       "/:id/papers/:paperId",

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../api/axios';
+import EmptyState from '../components/common/EmptyState';
 
 const ROLE_BADGE = {
   researcher: 'bg-blue-100 text-blue-700',
@@ -144,10 +145,12 @@ export default function AdminFeedbackPage() {
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-20 text-gray-400">
-            <div className="text-5xl mb-3">✅</div>
-            <p>No feedback in this category.</p>
-          </div>
+          <EmptyState
+            icon="✅"
+            title="No feedback in this category"
+            body="Try another filter or check back later for new messages."
+            className="py-12"
+          />
         ) : (
           <div className="space-y-4">
             {filtered.map(fb => <FeedbackItem key={fb.id} fb={fb} onRespond={handleRespond} />)}

@@ -70,7 +70,7 @@ class VenueUserModel {
                 v.type          AS venue_type,
                 v.issn,
                 p.name          AS publisher_name,
-                p.country       AS publisher_country
+          NULL::TEXT      AS publisher_country
             FROM venue_user vu
             JOIN "user" u ON u.id = vu.user_id
             JOIN venue v  ON v.id = vu.venue_id
@@ -94,7 +94,7 @@ class VenueUserModel {
                 v.type          AS venue_type,
                 v.issn,
                 p.name          AS publisher_name,
-                p.country       AS publisher_country
+          NULL::TEXT      AS publisher_country
             FROM venue_user vu
             JOIN "user" u ON u.id = vu.user_id
             JOIN venue v  ON v.id = vu.venue_id

@@ -18,6 +18,7 @@ function PapersDiscoveryPage() {
   const [selectedFieldId, setSelectedFieldId] = useState(null);
   const [selectedTopicId, setSelectedTopicId] = useState(null);
   const [expandedDomainId, setExpandedDomainId] = useState(null);
+  const [showAllTopics, setShowAllTopics] = useState(false);
 
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -158,6 +159,7 @@ function PapersDiscoveryPage() {
     setSelectedFieldId(null);
     setSelectedTopicId(null);
     setExpandedDomainId(nextDomainId);
+    setShowAllTopics(false);
     setPage(1);
   };
 
@@ -170,6 +172,7 @@ function PapersDiscoveryPage() {
     }
 
     setExpandedDomainId(domainId);
+      setShowAllTopics(false);
 
     if (selectedDomainId !== domainId) {
       setSelectedDomainId(domainId);
@@ -183,6 +186,7 @@ function PapersDiscoveryPage() {
     const isSame = selectedFieldId === fieldId;
     setSelectedFieldId(isSame ? null : fieldId);
     setSelectedTopicId(null);
+    setShowAllTopics(false);
     setPage(1);
   };
 
@@ -210,6 +214,11 @@ function PapersDiscoveryPage() {
 
     return pages;
   }, [page, totalPages]);
+
+  const visibleTopics = useMemo(() => {
+    if (showAllTopics) return topics;
+    return topics.slice(0, 12);
+  }, [topics, showAllTopics]);
 
   const sortedPapers = useMemo(() => {
     const copy = [...papers];
@@ -321,10 +330,21 @@ function PapersDiscoveryPage() {
 
               {selectedField && (
                 <>
-                  <p className="mb-2 text-sm font-semibold text-slate-700">Topics in {selectedField.name}</p>
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <p className="text-sm font-semibold text-slate-700">Topics in {selectedField.name}</p>
+                    {topics.length > 12 ? (
+                      <button
+                        type="button"
+                        onClick={() => setShowAllTopics((prev) => !prev)}
+                        className="rounded-md border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                      >
+                        {showAllTopics ? "Collapse topics" : `Show all topics (${topics.length})`}
+                      </button>
+                    ) : null}
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     {topics.length ? (
-                      topics.map((topic) => {
+                      visibleTopics.map((topic) => {
                         const selected = selectedTopicId === topic.id;
                         return (
                           <button
@@ -345,6 +365,9 @@ function PapersDiscoveryPage() {
                       <span className="text-sm text-slate-500">No topics found for this field.</span>
                     )}
                   </div>
+                  {topics.length > 12 && !showAllTopics ? (
+                    <p className="mt-2 text-xs text-slate-500">Showing first 12 topics for readability.</p>
+                  ) : null}
                 </>
               )}
             </div>
