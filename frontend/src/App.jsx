@@ -5,6 +5,7 @@ import AppHeader from "./components/layout/AppHeader";
 import { ProtectedRoute } from "./routes/ProtectedRoute";
 import DashboardPage from "./pages/DashboardPage";
 import LoginPage from "./pages/LoginPage";
+import LandingPage from "./pages/LandingPage";
 import PaperDetailsPage from "./pages/PaperDetailsPage";
 import PaperReviewsPage from "./pages/PaperReviewsPage";
 import PapersDiscoveryPage from "./pages/PapersDiscoveryPage";
@@ -18,6 +19,7 @@ import VenueProfilePage from './pages/VenueProfilePage';
 import FeedbackPage from './pages/FeedbackPage';
 import AdminFeedbackPage from './pages/AdminFeedbackPage';
 import MyLibraryPage from './pages/MyLibraryPage';
+import EditProfilePage from './pages/EditProfilePage';
 
 function App() {
   return (
@@ -25,7 +27,7 @@ function App() {
       <BrowserRouter>
         <AppHeader />
         <Routes>
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/" element={<LandingPage />} />
           <Route path="/papers" element={<PapersDiscoveryPage />} />
           <Route path="/papers/:id" element={<PaperDetailsPage />} />
           <Route
@@ -73,6 +75,7 @@ function App() {
           <Route path="/feedback" element={<ProtectedRoute><FeedbackPage /></ProtectedRoute>} />
           <Route path="/feedback/my" element={<ProtectedRoute><FeedbackPage /></ProtectedRoute>} />
           <Route path="/library" element={<ProtectedRoute><MyLibraryPage /></ProtectedRoute>} />
+          <Route path="/profile/edit" element={<ProtectedRoute><EditProfilePage /></ProtectedRoute>} />
 
           {/* Admin only */}
           <Route
@@ -80,7 +83,7 @@ function App() {
             element={<ProtectedRoute allowedRoles={['admin']}><AdminFeedbackPage /></ProtectedRoute>}
           />
 
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <Toaster position="top-right" richColors />
       </BrowserRouter>

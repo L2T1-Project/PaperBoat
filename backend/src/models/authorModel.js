@@ -196,12 +196,14 @@ class AuthorModel {
           a.id,
           a.name,
           a.orc_id,
+          res.user_id          AS user_id,
           res.user_id          AS researcher_user_id,
           u.username,
           u.full_name,
           u.profile_pic_url,
           u.bio,
           (SELECT COUNT(*)::INT FROM paper_author pa2 WHERE pa2.author_id = a.id) AS paper_count,
+          COALESCE((SELECT COUNT(*)::INT FROM follows f WHERE f.followed_user_id = res.user_id), 0) AS follower_count,
           get_author_citation_count(a.id)                                          AS total_citations,
           compute_h_index(a.id)                                                    AS h_index
       FROM author a
@@ -254,6 +256,27 @@ class AuthorModel {
       JOIN author a ON a.id = shared.collaborator_id
       GROUP BY a.id, a.name, a.orc_id
       ORDER BY shared_paper_count DESC, a.name ASC;
+    `;
+
+    const result = await this.db.query_executor(query, [authorId]);
+    return result.rows;
+  };
+
+  getInstituteHistoryByAuthor = async (authorId) => {
+    const query = `
+      SELECT
+        i.id AS institute_id,
+        i.name AS institute_name,
+        i.country,
+        i.website_url,
+        i.img_url,
+        ih.from_date,
+        ih.upto_date
+      FROM researcher r
+      JOIN institute_history ih ON ih.researcher_id = r.user_id
+      JOIN institute i          ON i.id = ih.institute_id
+      WHERE r.author_id = $1
+      ORDER BY ih.from_date DESC;
     `;
 
     const result = await this.db.query_executor(query, [authorId]);

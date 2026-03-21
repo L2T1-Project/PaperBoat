@@ -81,6 +81,31 @@ export default function VenueProfilePage() {
               </div>
               {venue.issn && <p className="text-sm text-gray-500">ISSN: <span className="font-mono">{venue.issn}</span></p>}
               <p className="text-sm text-gray-500 mt-1">Publisher: <span className="text-gray-700 font-medium">{venue.publisher_name}</span></p>
+
+              {venue.venue_user_id ? (
+                <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Claimed By Venue User</p>
+                  <div className="mt-2 flex items-start gap-3">
+                    {venue.venue_user_profile_pic_url ? (
+                      <img
+                        src={venue.venue_user_profile_pic_url}
+                        alt={venue.venue_user_full_name || "Venue user"}
+                        className="h-10 w-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="h-10 w-10 rounded-full bg-slate-200" />
+                    )}
+                    <div>
+                      <p className="text-sm font-medium text-slate-800">{venue.venue_user_full_name || "Venue User"}</p>
+                      {venue.venue_user_bio ? (
+                        <p className="mt-1 text-sm text-slate-600">{venue.venue_user_bio}</p>
+                      ) : (
+                        <p className="mt-1 text-xs text-slate-500">No bio added yet.</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : null}
             </div>
           </div>
         </div>

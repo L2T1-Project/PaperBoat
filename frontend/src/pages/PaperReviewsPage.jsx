@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import api from "../api/axios";
+import DisabledHint from "../components/common/DisabledHint";
 
 function PaperReviewsPage() {
   const { id } = useParams();
@@ -21,6 +22,7 @@ function PaperReviewsPage() {
       return null;
     }
   }, []);
+  const isGuest = !currentUser?.userId;
 
   const fetchReviews = async () => {
     try {
@@ -181,7 +183,8 @@ function PaperReviewsPage() {
         <button
           type="button"
           onClick={() => voteOnReview(reviewId, "up")}
-          disabled={isVoting}
+          disabled={isVoting || isGuest}
+          title={isGuest ? "Login as a researcher to vote" : ""}
           className={`rounded-md border px-2 py-1 ${
             voteState.currentUserVote === "up"
               ? "border-slate-700 bg-slate-200 text-slate-900"
@@ -193,7 +196,8 @@ function PaperReviewsPage() {
         <button
           type="button"
           onClick={() => voteOnReview(reviewId, "down")}
-          disabled={isVoting}
+          disabled={isVoting || isGuest}
+          title={isGuest ? "Login as a researcher to vote" : ""}
           className={`rounded-md border px-2 py-1 ${
             voteState.currentUserVote === "down"
               ? "border-red-400 bg-red-50 text-red-700"
@@ -226,11 +230,15 @@ function PaperReviewsPage() {
               }))
             }
             placeholder="Write a reply"
+            disabled={isGuest}
+            title={isGuest ? "Login as a researcher to reply" : ""}
             className="flex-1 rounded-md border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-slate-700"
           />
           <button
             type="button"
             onClick={() => submitReply(node.id)}
+            disabled={isGuest}
+            title={isGuest ? "Login as a researcher to reply" : ""}
             className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-100"
           >
             Reply
@@ -280,15 +288,20 @@ function PaperReviewsPage() {
               value={reviewText}
               onChange={(event) => setReviewText(event.target.value)}
               placeholder="Write your review or comment"
+              disabled={isGuest}
+              title={isGuest ? "Login as a researcher to post a review" : ""}
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none focus:border-slate-700"
             />
             <div className="mt-2">
               <button
                 type="submit"
+                disabled={isGuest}
+                title={isGuest ? "Login as a researcher to post a review" : ""}
                 className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-900"
               >
                 Post Review
               </button>
+              <DisabledHint show={isGuest} text="Login as a researcher to post reviews, replies, and votes." />
             </div>
           </form>
 

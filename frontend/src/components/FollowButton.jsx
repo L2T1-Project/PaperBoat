@@ -10,20 +10,22 @@ export default function FollowButton({ targetUserId, className = '' }) {
   const [loading, setLoading]     = useState(true);
   const [busy, setBusy]           = useState(false);
 
-  const isSelf = user?.userId === targetUserId;
+  const hasTarget = Number.isInteger(Number(targetUserId));
+  const isSelf = user?.userId === Number(targetUserId);
 
   useEffect(() => {
-    if (!isAuthenticated || !targetUserId || isSelf) { setLoading(false); return; }
+    if (!isAuthenticated || !hasTarget || isSelf) { setLoading(false); return; }
     api.get(`/follows/status/${targetUserId}`)
       .then(res => setFollowing(res.data.data.following))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [targetUserId, isAuthenticated, isSelf]);
+  }, [targetUserId, isAuthenticated, isSelf, hasTarget]);
 
   if (isSelf) return null;
 
   async function toggle() {
     if (!isAuthenticated) { navigate('/login'); return; }
+    if (!hasTarget) { return; }
     setBusy(true);
     try {
       if (following) {
@@ -38,6 +40,19 @@ export default function FollowButton({ targetUserId, className = '' }) {
   }
 
   if (loading) return <div className={`h-9 w-24 bg-gray-100 rounded-xl animate-pulse ${className}`} />;
+
+  if (!hasTarget) {
+    return (
+      <button
+        type="button"
+        disabled
+        title="Follow unavailable: this author is not linked to a user account yet"
+        className={`px-5 py-2 rounded-xl text-sm font-medium border border-gray-200 bg-gray-100 text-gray-500 cursor-not-allowed ${className}`}
+      >
+        Follow unavailable
+      </button>
+    );
+  }
 
   return (
     <button

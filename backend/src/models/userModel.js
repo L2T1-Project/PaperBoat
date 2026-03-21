@@ -92,6 +92,76 @@ class UserModel {
     return result.rows[0] || null;
   };
 
+  getMyProfile = async (userId) => {
+    const query = `
+            SELECT
+                u.id AS user_id,
+                u.username,
+                u.full_name,
+                u.email,
+                u.phone_number,
+                u.profile_pic_url,
+                u.bio,
+                CASE
+                    WHEN a.user_id IS NOT NULL THEN 'admin'
+                    WHEN r.user_id IS NOT NULL THEN 'researcher'
+                    WHEN vu.user_id IS NOT NULL THEN 'venue_user'
+                    ELSE 'user'
+                END AS role,
+                au.orc_id,
+                v.id AS venue_id,
+                v.issn,
+                v.name AS venue_name
+            FROM "user" u
+            LEFT JOIN admin a       ON a.user_id  = u.id
+            LEFT JOIN researcher r  ON r.user_id  = u.id
+            LEFT JOIN author au     ON au.id      = r.author_id
+            LEFT JOIN venue_user vu ON vu.user_id = u.id
+            LEFT JOIN venue v       ON v.id       = vu.venue_id
+            WHERE u.id = $1;
+        `;
+
+    const result = await this.db.query_executor(query, [userId]);
+    return result.rows[0] || null;
+  };
+
+  updateMyProfile = async (userId, payload) => {
+    const setClauses = [];
+    const values = [userId];
+
+    const pushField = (column, value) => {
+      values.push(value);
+      setClauses.push(`${column} = $${values.length}`);
+    };
+
+    if (Object.prototype.hasOwnProperty.call(payload, "full_name")) {
+      pushField("full_name", payload.full_name);
+    }
+    if (Object.prototype.hasOwnProperty.call(payload, "phone_number")) {
+      pushField("phone_number", payload.phone_number);
+    }
+    if (Object.prototype.hasOwnProperty.call(payload, "bio")) {
+      pushField("bio", payload.bio);
+    }
+    if (Object.prototype.hasOwnProperty.call(payload, "profile_pic_url")) {
+      pushField("profile_pic_url", payload.profile_pic_url);
+    }
+
+    if (!setClauses.length) {
+      return this.getMyProfile(userId);
+    }
+
+    const query = `
+            UPDATE "user"
+            SET ${setClauses.join(", ")}
+            WHERE id = $1
+            RETURNING id;
+        `;
+
+    await this.db.query_executor(query, values);
+    return this.getMyProfile(userId);
+  };
+
   getUserByEmail = async (email) => {
     const query = `
             SELECT *
@@ -278,168 +348,10 @@ class UserModel {
     return result.rows[0] || null;
   };
 
-  followUser = async (followingUserId, followedUserId) => {
-    const query = `
-            INSERT INTO follows (following_user_id, followed_user_id)
-            VALUES ($1, $2)
-            RETURNING following_user_id, followed_user_id;
-        `;
-    const params = [followingUserId, followedUserId];
-    const result = await this.db.query_executor(query, params);
-    return result.rows[0];
-  };
-
-  unfollowUser = async (followingUserId, followedUserId) => {
-    const query = `
-            DELETE FROM follows
-            WHERE following_user_id = $1 AND followed_user_id = $2
-            RETURNING following_user_id, followed_user_id;
-        `;
-    const params = [followingUserId, followedUserId];
-    const result = await this.db.query_executor(query, params);
-    return result.rows[0] || null;
-  };
-
-  getFollowers = async (userId) => {
-    const query = `
-            SELECT u.id, u.username, u.full_name, u.profile_pic_url
-            FROM follows f
-            JOIN "user" u ON u.id = f.following_user_id
-            WHERE f.followed_user_id = $1
-            ORDER BY u.username;
-        `;
-    const params = [userId];
-    const result = await this.db.query_executor(query, params);
-    return result.rows;
-  };
-
-  getFollowing = async (userId) => {
-    const query = `
-            SELECT u.id, u.username, u.full_name, u.profile_pic_url
-            FROM follows f
-            JOIN "user" u ON u.id = f.followed_user_id
-            WHERE f.following_user_id = $1
-            ORDER BY u.username;
-        `;
-    const params = [userId];
-    const result = await this.db.query_executor(query, params);
-    return result.rows;
-  };
-
   getAllStatuses = async () => {
     const query = `SELECT id, status_name FROM status ORDER BY id;`;
     const result = await this.db.query_executor(query);
     return result.rows;
-  };
-
-  addToUserLibrary = async (userId, paperId) => {
-    const query = `
-            INSERT INTO user_library (user_id, paper_id)
-            VALUES ($1, $2)
-            RETURNING user_id, paper_id, saved_at;
-        `;
-    const params = [userId, paperId];
-    const result = await this.db.query_executor(query, params);
-    return result.rows[0];
-  };
-
-  removeFromUserLibrary = async (userId, paperId) => {
-    const query = `
-            DELETE FROM user_library
-            WHERE user_id = $1 AND paper_id = $2
-            RETURNING user_id, paper_id;
-        `;
-    const params = [userId, paperId];
-    const result = await this.db.query_executor(query, params);
-    return result.rows[0] || null;
-  };
-
-  getUserLibrary = async (userId) => {
-    const query = `
-            SELECT
-                p.id,
-                p.title,
-                p.publication_date,
-                p.pdf_url,
-                p.doi,
-                ul.saved_at,
-                v.name AS venue_name
-            FROM user_library ul
-            JOIN paper p ON p.id = ul.paper_id
-            JOIN venue v ON v.id = p.venue_id
-            WHERE ul.user_id = $1
-            ORDER BY ul.saved_at DESC;
-        `;
-    const params = [userId];
-    const result = await this.db.query_executor(query, params);
-    return result.rows;
-  };
-
-  createFeedback = async (senderId, receiverId, message) => {
-    const query = `
-            INSERT INTO feedback (sender_id, receiver_id, message)
-            VALUES ($1, $2, $3)
-            RETURNING *;
-        `;
-    const result = await this.db.query_executor(query, [
-      senderId,
-      receiverId,
-      message,
-    ]);
-    return result.rows[0];
-  };
-
-  getFeedbackById = async (feedbackId) => {
-    const query = `
-            SELECT
-                f.*,
-                s.username AS sender_username,
-                s.full_name AS sender_full_name,
-                r.username AS receiver_username,
-                r.full_name AS receiver_full_name
-            FROM feedback f
-            JOIN "user" s ON s.id = f.sender_id
-            JOIN "user" r ON r.id = f.receiver_id
-            WHERE f.id = $1;
-        `;
-    const result = await this.db.query_executor(query, [feedbackId]);
-    return result.rows[0] || null;
-  };
-
-  getFeedbackBySender = async (senderId) => {
-    const query = `
-            SELECT
-                f.*,
-                r.username AS receiver_username,
-                r.full_name AS receiver_full_name
-            FROM feedback f
-            JOIN "user" r ON r.id = f.receiver_id
-            WHERE f.sender_id = $1
-            ORDER BY f.created_at DESC;
-        `;
-    const result = await this.db.query_executor(query, [senderId]);
-    return result.rows;
-  };
-
-  getFeedbackByReceiver = async (receiverId) => {
-    const query = `
-            SELECT
-                f.*,
-                s.username AS sender_username,
-                s.full_name AS sender_full_name
-            FROM feedback f
-            JOIN "user" s ON s.id = f.sender_id
-            WHERE f.receiver_id = $1
-            ORDER BY f.created_at DESC;
-        `;
-    const result = await this.db.query_executor(query, [receiverId]);
-    return result.rows;
-  };
-
-  deleteFeedback = async (feedbackId) => {
-    const query = `DELETE FROM feedback WHERE id = $1 RETURNING id;`;
-    const result = await this.db.query_executor(query, [feedbackId]);
-    return result.rows[0] || null;
   };
 }
 

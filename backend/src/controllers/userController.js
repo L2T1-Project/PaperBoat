@@ -1,4 +1,5 @@
 const UserModel = require("../models/userModel.js");
+const { uploadUserProfileImage } = require("../utils/cloudinary.js");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
@@ -317,6 +318,95 @@ class UserController {
     }
   };
 
+  getMyProfile = async (req, res) => {
+    try {
+      const userId = req.auth?.userId;
+      const profile = await this.userModel.getMyProfile(userId);
+
+      if (!profile) {
+        return res.status(404).json({ success: false, message: "User not found." });
+      }
+
+      return res.status(200).json({ success: true, data: profile });
+    } catch (error) {
+      console.error("[getMyProfile]", error.message);
+      return res.status(500).json({ success: false, message: "Internal server error." });
+    }
+  };
+
+  updateMyProfile = async (req, res) => {
+    try {
+      const userId = req.auth?.userId;
+      const role = String(req.auth?.role || req.user?.role || "user").toLowerCase();
+
+      const forbiddenKeys = ["username", "email", "orc_id", "issn"];
+      for (const key of forbiddenKeys) {
+        if (Object.prototype.hasOwnProperty.call(req.body, key)) {
+          return res.status(400).json({
+            success: false,
+            message: `${key} cannot be edited from this form.`,
+          });
+        }
+      }
+
+      const payload = {};
+      if (Object.prototype.hasOwnProperty.call(req.body, "phone_number")) {
+        payload.phone_number = req.body.phone_number?.trim() || null;
+      }
+      if (Object.prototype.hasOwnProperty.call(req.body, "bio")) {
+        payload.bio = req.body.bio?.trim() || null;
+      }
+
+      if (Object.prototype.hasOwnProperty.call(req.body, "full_name")) {
+        if (role !== "user") {
+          return res.status(403).json({
+            success: false,
+            message: "Only normal users can edit full name. Please contact admin via Feedback.",
+          });
+        }
+
+        const nextFullName = req.body.full_name?.trim();
+        if (!nextFullName) {
+          return res.status(400).json({ success: false, message: "full_name cannot be empty." });
+        }
+        payload.full_name = nextFullName;
+      }
+
+      const updated = await this.userModel.updateMyProfile(userId, payload);
+      return res.status(200).json({ success: true, data: updated });
+    } catch (error) {
+      console.error("[updateMyProfile]", error.message);
+      return res.status(500).json({ success: false, message: "Internal server error." });
+    }
+  };
+
+  uploadMyProfilePhoto = async (req, res) => {
+    try {
+      const userId = req.auth?.userId;
+      if (!req.file?.buffer) {
+        return res.status(400).json({ success: false, message: "Image file is required." });
+      }
+
+      const imageUrl = await uploadUserProfileImage(req.file.buffer, userId, req.file.mimetype);
+      const updated = await this.userModel.updateMyProfile(userId, { profile_pic_url: imageUrl });
+
+      return res.status(200).json({ success: true, data: updated });
+    } catch (error) {
+      console.error("[uploadMyProfilePhoto]", error.message);
+      const details = String(error?.message || "");
+      if (details.toLowerCase().includes("cloudinary")) {
+        return res.status(500).json({
+          success: false,
+          message: "Failed to upload image to Cloudinary. Verify CLOUDINARY_* settings in backend/.env.",
+        });
+      }
+      return res.status(500).json({
+        success: false,
+        message: details || "Failed to upload image.",
+      });
+    }
+  };
+
   getUserById = async (req, res) => {
     try {
       const { id } = req.params;
@@ -468,377 +558,12 @@ class UserController {
     }
   };
 
-  followUser = async (req, res) => {
-    try {
-      const { id } = req.params;
-      const { followingUserId } = req.body;
-
-      if (isNaN(id) || !followingUserId || isNaN(followingUserId)) {
-        return res.status(400).json({
-          success: false,
-          message: "id (param) and followingUserId (body) must be numbers.",
-        });
-      }
-
-      if (Number(id) === Number(followingUserId)) {
-        return res.status(400).json({
-          success: false,
-          message: "A user cannot follow themselves.",
-        });
-      }
-
-      const follow = await this.userModel.followUser(
-        Number(followingUserId),
-        Number(id),
-      );
-
-      return res.status(201).json({
-        success: true,
-        message: "Followed successfully.",
-        data: follow,
-      });
-    } catch (error) {
-      if (error.code === "23505") {
-        return res
-          .status(409)
-          .json({ success: false, message: "Already following this user." });
-      }
-      if (error.code === "23503") {
-        return res
-          .status(404)
-          .json({ success: false, message: "User not found." });
-      }
-      console.error("[followUser]", error.message);
-      return res
-        .status(500)
-        .json({ success: false, message: "Internal server error." });
-    }
-  };
-
-  unfollowUser = async (req, res) => {
-    try {
-      const { id } = req.params;
-      const { followingUserId } = req.body;
-
-      if (isNaN(id) || !followingUserId || isNaN(followingUserId)) {
-        return res.status(400).json({
-          success: false,
-          message: "id (param) and followingUserId (body) must be numbers.",
-        });
-      }
-
-      const follow = await this.userModel.unfollowUser(
-        Number(followingUserId),
-        Number(id),
-      );
-
-      if (!follow) {
-        return res
-          .status(404)
-          .json({ success: false, message: "Follow relationship not found." });
-      }
-
-      return res.status(200).json({
-        success: true,
-        message: "Unfollowed successfully.",
-        data: follow,
-      });
-    } catch (error) {
-      console.error("[unfollowUser]", error.message);
-      return res
-        .status(500)
-        .json({ success: false, message: "Internal server error." });
-    }
-  };
-
-  getFollowers = async (req, res) => {
-    try {
-      const { id } = req.params;
-
-      if (isNaN(id)) {
-        return res
-          .status(400)
-          .json({ success: false, message: "id must be a number." });
-      }
-
-      const followers = await this.userModel.getFollowers(Number(id));
-      return res
-        .status(200)
-        .json({ success: true, count: followers.length, data: followers });
-    } catch (error) {
-      console.error("[getFollowers]", error.message);
-      return res
-        .status(500)
-        .json({ success: false, message: "Internal server error." });
-    }
-  };
-
-  getFollowing = async (req, res) => {
-    try {
-      const { id } = req.params;
-
-      if (isNaN(id)) {
-        return res
-          .status(400)
-          .json({ success: false, message: "id must be a number." });
-      }
-
-      const following = await this.userModel.getFollowing(Number(id));
-      return res
-        .status(200)
-        .json({ success: true, count: following.length, data: following });
-    } catch (error) {
-      console.error("[getFollowing]", error.message);
-      return res
-        .status(500)
-        .json({ success: false, message: "Internal server error." });
-    }
-  };
-
   getAllStatuses = async (req, res) => {
     try {
       const statuses = await this.userModel.getAllStatuses();
       return res.status(200).json({ success: true, data: statuses });
     } catch (error) {
       console.error("[getAllStatuses]", error.message);
-      return res
-        .status(500)
-        .json({ success: false, message: "Internal server error." });
-    }
-  };
-
-  addToUserLibrary = async (req, res) => {
-    try {
-      const { id } = req.params;
-      const { paper_id } = req.body;
-
-      if (isNaN(id)) {
-        return res
-          .status(400)
-          .json({ success: false, message: "id must be a number." });
-      }
-      if (!paper_id || isNaN(paper_id)) {
-        return res.status(400).json({
-          success: false,
-          message: "paper_id is required and must be a number.",
-        });
-      }
-
-      const entry = await this.userModel.addToUserLibrary(
-        Number(id),
-        Number(paper_id),
-      );
-      return res.status(201).json({
-        success: true,
-        message: "Paper added to library.",
-        data: entry,
-      });
-    } catch (error) {
-      if (error.code === "23505") {
-        return res.status(409).json({
-          success: false,
-          message: "Paper is already in this user's library.",
-        });
-      }
-      if (error.code === "23503") {
-        return res
-          .status(404)
-          .json({ success: false, message: "User or paper not found." });
-      }
-      console.error("[addToLibrary]", error.message);
-      return res
-        .status(500)
-        .json({ success: false, message: "Internal server error." });
-    }
-  };
-
-  removeFromUserLibrary = async (req, res) => {
-    try {
-      const { id, paperId } = req.params;
-
-      if (isNaN(id) || isNaN(paperId)) {
-        return res
-          .status(400)
-          .json({ success: false, message: "id and paperId must be numbers." });
-      }
-
-      const entry = await this.userModel.removeFromUserLibrary(
-        Number(id),
-        Number(paperId),
-      );
-
-      if (!entry) {
-        return res
-          .status(404)
-          .json({ success: false, message: "Paper not found in library." });
-      }
-
-      return res.status(200).json({
-        success: true,
-        message: "Paper removed from library.",
-        data: entry,
-      });
-    } catch (error) {
-      console.error("[removeFromLibrary]", error.message);
-      return res
-        .status(500)
-        .json({ success: false, message: "Internal server error." });
-    }
-  };
-
-  getUserLibrary = async (req, res) => {
-    try {
-      const { id } = req.params;
-
-      if (isNaN(id)) {
-        return res
-          .status(400)
-          .json({ success: false, message: "id must be a number." });
-      }
-
-      const library = await this.userModel.getUserLibrary(Number(id));
-      return res
-        .status(200)
-        .json({ success: true, count: library.length, data: library });
-    } catch (error) {
-      console.error("[getUserLibrary]", error.message);
-      return res
-        .status(500)
-        .json({ success: false, message: "Internal server error." });
-    }
-  };
-
-  createFeedback = async (req, res) => {
-    try {
-      const { sender_id, receiver_id, message } = req.body;
-
-      if (
-        !sender_id ||
-        isNaN(sender_id) ||
-        !receiver_id ||
-        isNaN(receiver_id) ||
-        !message
-      ) {
-        return res.status(400).json({
-          success: false,
-          message: "sender_id, receiver_id, and message are required.",
-        });
-      }
-
-      if (Number(sender_id) === Number(receiver_id)) {
-        return res.status(400).json({
-          success: false,
-          message: "A user cannot send feedback to themselves.",
-        });
-      }
-
-      const feedback = await this.userModel.createFeedback(
-        Number(sender_id),
-        Number(receiver_id),
-        message,
-      );
-      return res
-        .status(201)
-        .json({ success: true, message: "Feedback sent.", data: feedback });
-    } catch (error) {
-      if (error.code === "23503")
-        return res
-          .status(400)
-          .json({ success: false, message: "Sender or receiver not found." });
-      if (error.code === "23514")
-        return res.status(400).json({
-          success: false,
-          message: "A user cannot send feedback to themselves.",
-        });
-      console.error("[createFeedback]", error.message);
-      return res
-        .status(500)
-        .json({ success: false, message: "Internal server error." });
-    }
-  };
-
-  getFeedbackById = async (req, res) => {
-    try {
-      const { id } = req.params;
-      if (isNaN(id))
-        return res
-          .status(400)
-          .json({ success: false, message: "id must be a number." });
-
-      const feedback = await this.userModel.getFeedbackById(Number(id));
-      if (!feedback)
-        return res.status(404).json({
-          success: false,
-          message: `Feedback with id ${id} not found.`,
-        });
-      return res.status(200).json({ success: true, data: feedback });
-    } catch (error) {
-      console.error("[getFeedbackById]", error.message);
-      return res
-        .status(500)
-        .json({ success: false, message: "Internal server error." });
-    }
-  };
-
-  getFeedbackBySender = async (req, res) => {
-    try {
-      const { id } = req.params;
-      if (isNaN(id))
-        return res
-          .status(400)
-          .json({ success: false, message: "id must be a number." });
-
-      const feedbacks = await this.userModel.getFeedbackBySender(Number(id));
-      return res
-        .status(200)
-        .json({ success: true, count: feedbacks.length, data: feedbacks });
-    } catch (error) {
-      console.error("[getFeedbackBySender]", error.message);
-      return res
-        .status(500)
-        .json({ success: false, message: "Internal server error." });
-    }
-  };
-
-  getFeedbackByReceiver = async (req, res) => {
-    try {
-      const { id } = req.params;
-      if (isNaN(id))
-        return res
-          .status(400)
-          .json({ success: false, message: "id must be a number." });
-
-      const feedbacks = await this.userModel.getFeedbackByReceiver(Number(id));
-      return res
-        .status(200)
-        .json({ success: true, count: feedbacks.length, data: feedbacks });
-    } catch (error) {
-      console.error("[getFeedbackByReceiver]", error.message);
-      return res
-        .status(500)
-        .json({ success: false, message: "Internal server error." });
-    }
-  };
-
-  deleteFeedback = async (req, res) => {
-    try {
-      const { id } = req.params;
-      if (isNaN(id))
-        return res
-          .status(400)
-          .json({ success: false, message: "id must be a number." });
-
-      const removed = await this.userModel.deleteFeedback(Number(id));
-      if (!removed)
-        return res.status(404).json({
-          success: false,
-          message: `Feedback with id ${id} not found.`,
-        });
-      return res
-        .status(200)
-        .json({ success: true, message: "Feedback deleted.", data: removed });
-    } catch (error) {
-      console.error("[deleteFeedback]", error.message);
       return res
         .status(500)
         .json({ success: false, message: "Internal server error." });

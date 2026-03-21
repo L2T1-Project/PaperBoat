@@ -92,14 +92,23 @@ class VenueUserController {
   getVenueUserById = async (req, res) => {
     try {
       const { id } = req.params;
+
+      if (isNaN(id)) {
+        return res.status(400).json({ success: false, error: "id must be a number." });
+      }
+
+      if (req.auth?.userId !== Number(id) && req.user?.role !== "admin") {
+        return res.status(403).json({ success: false, error: "Forbidden." });
+      }
+
       const venueUser = await this.venueUserModel.getVenueUserById(id);
 
       if (!venueUser)
-        return res.status(404).json({ error: "Venue user not found" });
-      return res.status(200).json(venueUser);
+        return res.status(404).json({ success: false, error: "Venue user not found" });
+      return res.status(200).json({ success: true, data: venueUser });
     } catch (err) {
       console.error("VenueUserController.getVenueUserById:", err);
-      return res.status(500).json({ error: "Internal server error" });
+      return res.status(500).json({ success: false, error: "Internal server error" });
     }
   };
 

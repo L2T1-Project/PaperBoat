@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../api/axios";
+import EmptyState from "../components/common/EmptyState";
 
 const TAB_STATUS = [
   { key: "Pending", statusId: 5 },
@@ -104,7 +105,16 @@ export default function AdminClaimsPage() {
           {isLoading ? (
             <p className="text-sm text-slate-600">Loading {activeTab.toLowerCase()} claims...</p>
           ) : !claims.length ? (
-            <p className="text-sm text-slate-500">No {activeTab.toLowerCase()} claims right now.</p>
+            <EmptyState
+              icon={activeTab === "Pending" ? "📭" : activeTab === "Approved" ? "✅" : "🗂️"}
+              title={`No ${activeTab.toLowerCase()} claims right now`}
+              body={activeTab === "Pending"
+                ? "The queue is currently clear. New submissions will appear here."
+                : "Use the Pending tab to process new moderation actions."}
+              ctaLabel="Open pending queue"
+              ctaAction={() => setActiveTab("Pending")}
+              className="py-8"
+            />
           ) : (
             <div className="space-y-3">
               {claims.map((claim) => {

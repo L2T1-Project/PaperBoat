@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../api/axios';
+import EmptyState from '../components/common/EmptyState';
+import DisabledHint from '../components/common/DisabledHint';
 
 function FeedbackCard({ fb }) {
   return (
@@ -115,6 +117,10 @@ export default function FeedbackPage() {
             >
               {submitting ? 'Submitting…' : 'Submit Feedback'}
             </button>
+            <DisabledHint
+              show={!submitting && !message.trim()}
+              text="Add a message to enable the submit button."
+            />
           </form>
         </div>
 
@@ -131,10 +137,12 @@ export default function FeedbackPage() {
             ))}
           </div>
         ) : myFeedback.length === 0 ? (
-          <div className="text-center py-16 text-gray-400">
-            <div className="text-5xl mb-3">💬</div>
-            <p>You haven't submitted any feedback yet.</p>
-          </div>
+          <EmptyState
+            icon="💬"
+            title="No feedback submitted yet"
+            body="Use the form above to send your first suggestion, issue report, or question."
+            className="py-12"
+          />
         ) : (
           <div className="space-y-4">
             {myFeedback.map(fb => <FeedbackCard key={fb.id} fb={fb} />)}

@@ -1,10 +1,8 @@
 const FollowModel = require('../models/followModel.js');
-const NotificationModel = require('../models/notificationModel.js');
 
 class FollowController {
   constructor() {
     this.followModel = new FollowModel();
-    this.notificationModel = new NotificationModel();
   }
 
   followResearcher = async (req, res) => {
@@ -14,12 +12,16 @@ class FollowController {
       if (followingUserId === followedUserId) {
         return res.status(400).json({ success: false, message: 'Cannot follow yourself.' });
       }
-      await this.followModel.followUser(followingUserId, followedUserId);
-      // Fire-and-forget notification
-      this.followModel.getUserFullName(followingUserId)
-        .then(name => this.notificationModel.notifyNewFollower(followingUserId, followedUserId, name))
-        .catch(err => console.error('follow notification error:', err));
-      res.status(201).json({ success: true, message: 'Now following.' });
+      const inserted = await this.followModel.followUser(followingUserId, followedUserId);
+
+      if (inserted) {
+        // Requirement: after follow insert, call notify_new_follower procedure.
+        this.followModel.notifyNewFollower(followingUserId, followedUserId)
+          .catch((err) => console.error('follow notification procedure error:', err));
+        return res.status(201).json({ success: true, message: 'Now following.' });
+      }
+
+      return res.status(200).json({ success: true, message: 'Already following.' });
     } catch (err) {
       console.error('followResearcher error:', err);
       res.status(500).json({ success: false, message: 'Failed to follow.' });
@@ -29,6 +31,7 @@ class FollowController {
   unfollowResearcher = async (req, res) => {
     try {
       await this.followModel.unfollowUser(req.auth.userId, Number(req.params.userId));
+      // Requirement: no notification on unfollow.
       res.json({ success: true, message: 'Unfollowed.' });
     } catch (err) {
       console.error('unfollowResearcher error:', err);

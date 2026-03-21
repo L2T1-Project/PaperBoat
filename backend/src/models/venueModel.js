@@ -102,9 +102,15 @@ class VenueModel {
                 p.name       AS publisher_name,
           NULL::TEXT   AS publisher_country,
           NULL::TEXT   AS publisher_website,
-          p.img_url    AS publisher_img_url
+          p.img_url    AS publisher_img_url,
+          vu.user_id   AS venue_user_id,
+          u.full_name  AS venue_user_full_name,
+          u.bio        AS venue_user_bio,
+          u.profile_pic_url AS venue_user_profile_pic_url
             FROM venue v
             LEFT JOIN publisher p ON p.id = v.publisher_id
+            LEFT JOIN venue_user vu ON vu.venue_id = v.id
+            LEFT JOIN "user" u ON u.id = vu.user_id
             WHERE v.id = $1;
         `;
 

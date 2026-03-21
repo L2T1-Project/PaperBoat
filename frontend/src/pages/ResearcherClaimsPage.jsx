@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import api from "../api/axios";
+import EmptyState from "../components/common/EmptyState";
 
 const STATUS_CLASSES = {
   Pending: "border-amber-200 bg-amber-50 text-amber-700",
@@ -81,7 +82,16 @@ export default function ResearcherClaimsPage() {
                 </h2>
 
                 {!grouped[status].length ? (
-                  <p className="mt-3 text-sm text-slate-500">No {status.toLowerCase()} claims.</p>
+                  <EmptyState
+                    icon={status === "Pending" ? "⏳" : status === "Approved" ? "✅" : "🧾"}
+                    title={`No ${status.toLowerCase()} claims`}
+                    body={status === "Pending"
+                      ? "Submit or refresh claims from paper pages to see live moderation status here."
+                      : "This section will populate automatically when claim decisions are made."}
+                    ctaLabel="Browse papers"
+                    ctaTo="/papers"
+                    className="mt-3 py-7"
+                  />
                 ) : (
                   <div className="mt-3 space-y-3">
                     {grouped[status].map((claim) => (
