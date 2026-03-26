@@ -101,6 +101,7 @@ export function SignupForm() {
   const [serverError, setServerError] = useState("");
   const [resolvedAuthor, setResolvedAuthor] = useState(null);
   const [resolvedVenue, setResolvedVenue] = useState(null);
+  const [claimedAlreadyAuthor, setClaimedAlreadyAuthor] = useState(null);
 
   const {
     register,
@@ -118,7 +119,7 @@ export function SignupForm() {
 
   const canSubmit = useMemo(() => {
     if (selectedRole === "researcher") {
-      return Boolean(resolvedAuthor?.id);
+      return Boolean(resolvedAuthor?.id) || Boolean(claimedAlreadyAuthor);
     }
 
     if (selectedRole === "venue_user") {
@@ -126,22 +127,37 @@ export function SignupForm() {
     }
 
     return true;
-  }, [selectedRole, resolvedAuthor, resolvedVenue]);
+  }, [selectedRole, resolvedAuthor, resolvedVenue, claimedAlreadyAuthor]);
 
   const handleRoleChange = (nextRole) => {
     setSelectedRole(nextRole);
     setResolvedAuthor(null);
     setResolvedVenue(null);
+    setClaimedAlreadyAuthor(null);
     setServerError("");
     setShowPassword(false);
     setShowConfirmPassword(false);
     reset(emptyFormValues());
   };
 
+  const handleAuthorClaim = (author) => {
+    setServerError("");
+    if (author.is_claimed) {
+      setClaimedAlreadyAuthor(author);
+      setResolvedAuthor({ _claimedFallback: true });
+    } else {
+      setClaimedAlreadyAuthor(null);
+      setResolvedAuthor(author);
+    }
+  };
+
   const onSubmit = async (values) => {
     setServerError("");
 
-    if (selectedRole === "researcher" && !values.orc_id?.trim()) {
+    const isClaimedFallback =
+      selectedRole === "researcher" && Boolean(claimedAlreadyAuthor);
+
+    if (selectedRole === "researcher" && !values.orc_id?.trim() && !claimedAlreadyAuthor) {
       setServerError("ORC ID is required before lookup.");
       return;
     }
@@ -151,9 +167,9 @@ export function SignupForm() {
       return;
     }
 
-    if (selectedRole === "researcher" && !resolvedAuthor?.id) {
+    if (selectedRole === "researcher" && !resolvedAuthor && !claimedAlreadyAuthor) {
       setServerError(
-        "Please complete a successful ORC ID lookup before signup.",
+        "Please complete a successful ORC ID lookup or claim a profile.",
       );
       return;
     }
@@ -171,7 +187,7 @@ export function SignupForm() {
       let endpoint = "/users";
       let requestBody = basePayload;
 
-      if (selectedRole === "researcher") {
+      if (selectedRole === "researcher" && !isClaimedFallback) {
         endpoint = "/researchers";
         requestBody = {
           ...basePayload,
@@ -191,7 +207,30 @@ export function SignupForm() {
       const { token, role, userId } = response.data;
 
       login(token, { userId, role });
-      toast.success("Account created! Redirecting to dashboard...");
+
+      if (isClaimedFallback) {
+        try {
+          await api.post(
+            "/feedback",
+            {
+              subject: "Author profile conflict during signup",
+              message:
+                `I tried to claim the author profile "${claimedAlreadyAuthor.name}" ` +
+                `(ID: ${claimedAlreadyAuthor.id}) during signup but it was already claimed. ` +
+                `Please help me link my account to the correct author profile.`,
+            },
+            { headers: { Authorization: `Bearer ${token}` } },
+          );
+        } catch {
+          console.warn("Auto-feedback send failed — non-fatal");
+        }
+        toast.success(
+          "Account created! A message has been sent to admin about your author profile.",
+        );
+      } else {
+        toast.success("Account created! Redirecting to dashboard...");
+      }
+
       navigate("/dashboard", { replace: true });
     } catch (error) {
       const message = buildSignupErrorMessage(error);
@@ -214,6 +253,7 @@ export function SignupForm() {
             value={orcId ?? ""}
             onChange={(value) => {
               setResolvedAuthor(null);
+              setClaimedAlreadyAuthor(null);
               setServerError("");
               reset(
                 { ...watch(), orc_id: value },
@@ -222,8 +262,11 @@ export function SignupForm() {
             }}
             onLookupSuccess={(author) => {
               setResolvedAuthor(author);
+              setClaimedAlreadyAuthor(null);
               setServerError("");
             }}
+            fullName={watch("full_name")}
+            onClaim={handleAuthorClaim}
             disabled={isSubmitting}
           />
         ) : null}

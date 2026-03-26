@@ -390,14 +390,20 @@ class AuthorController {
           .json({ error: "No authors found with this name." });
       }
 
-      const formatted = authors.map((author) => ({
-        id: author.id,
-        name: author.name,
-        orc_id: author.orc_id,
-        latest_paper: author.paper_id
-          ? { id: author.paper_id, title: author.paper_title }
-          : null,
-      }));
+      const formatted = await Promise.all(
+        authors.map(async (author) => {
+          const claimed = await this.authorModel.isAuthorClaimed(author.id);
+          return {
+            id: author.id,
+            name: author.name,
+            orc_id: author.orc_id,
+            latest_paper: author.paper_id
+              ? { id: author.paper_id, title: author.paper_title }
+              : null,
+            is_claimed: Boolean(claimed),
+          };
+        })
+      );
 
       return res.status(200).json(formatted);
     } catch (error) {
