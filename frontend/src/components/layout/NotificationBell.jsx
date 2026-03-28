@@ -11,14 +11,27 @@ const TYPE_ICON = {
 };
 
 function timeAgo(dateStr) {
-  const diff  = Date.now() - new Date(dateStr).getTime();
-  const mins  = Math.floor(diff / 60000);
+  if (!dateStr) return "just now";
+
+  // Some backend timestamps arrive without timezone suffix. Treat those as UTC
+  // to avoid local-time parsing offsets that can show incorrect hour differences.
+  const raw = String(dateStr).trim();
+  const withT = raw.includes("T") ? raw : raw.replace(" ", "T");
+  const hasZone = /(?:z|[+-]\d{2}(?::?\d{2})?)$/i.test(withT);
+  const normalized = hasZone ? withT : `${withT}Z`;
+
+  const createdMs = new Date(normalized).getTime();
+  if (Number.isNaN(createdMs)) return "just now";
+
+  const diff = Math.max(0, Date.now() - createdMs);
+  const mins = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
-  const days  = Math.floor(diff / 86400000);
-  if (mins  < 1)  return 'just now';
-  if (mins  < 60) return `${mins}m ago`;
-  if (hours < 24) return `${hours}h ago`;
-  return `${days}d ago`;
+  const days = Math.floor(diff / 86400000);
+
+  if (days >= 1) return `${days}d ago`;
+  if (hours >= 1) return `${hours}h ago`;
+  if (mins >= 1) return `${mins}m ago`;
+  return "just now";
 }
 
 export default function NotificationBell() {

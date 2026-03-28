@@ -29,7 +29,6 @@ export function AuthorLookup({
       setLookupError("");
       setResolvedOrcId("");
       setNameMatches([]);
-      setShowNameSearch(false);
       setNameTerm("");
       setSelectedAuthor(null);
       onLookupSuccess(null);
@@ -69,7 +68,6 @@ export function AuthorLookup({
       setLookupError("ORC ID is required before lookup.");
       setAuthor(null);
       setNameMatches([]);
-      setShowNameSearch(false);
       setSelectedAuthor(null);
       onLookupSuccess(null);
       return;
@@ -78,7 +76,6 @@ export function AuthorLookup({
     setIsLoading(true);
     setLookupError("");
     setNameMatches([]);
-    setShowNameSearch(false);
     setSelectedAuthor(null);
 
     try {
@@ -98,16 +95,14 @@ export function AuthorLookup({
         setResolvedOrcId("");
         onLookupSuccess(null);
 
+        setShowNameSearch(true);
         if (fullName?.trim()) {
           setNameTerm(fullName.trim());
-          setShowNameSearch(true);
           setIsLoading(false);
           await runNameSearch(fullName.trim());
         } else {
-          setNameTerm("");
-          setShowNameSearch(true);
           setLookupError(
-            "No author found with this ORC ID. Search by your name below."
+            "No author found with this ORC ID. Use name search below to match your profile."
           );
         }
         return;
@@ -130,6 +125,13 @@ export function AuthorLookup({
   const handleClaim = (match) => {
     setSelectedAuthor(match);
     onClaim(match);
+  };
+
+  const toggleNameSearch = () => {
+    setShowNameSearch((prev) => !prev);
+    if (!showNameSearch && !nameTerm.trim() && fullName?.trim()) {
+      setNameTerm(fullName.trim());
+    }
   };
 
   return (
@@ -169,6 +171,16 @@ export function AuthorLookup({
         </button>
       </div>
 
+      <button
+        type="button"
+        onClick={toggleNameSearch}
+        disabled={disabled || isLoading}
+        className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        <span>{showNameSearch ? "Hide name search" : "Don't have ORC ID? Search by name"}</span>
+        <span>{showNameSearch ? "▴" : "▾"}</span>
+      </button>
+
       {lookupError ? (
         <p className="text-sm text-red-500">{lookupError}</p>
       ) : null}
@@ -181,35 +193,10 @@ export function AuthorLookup({
         </div>
       ) : null}
 
-      {/* Unclaimed author claimed successfully — show success card instead of list */}
-      {selectedAuthor && !selectedAuthor.is_claimed ? (
-        <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-900">
-          <p className="font-semibold">Profile Selected</p>
-          <p>Name: {selectedAuthor.name}</p>
-          {selectedAuthor.latest_paper ? (
-            <p className="text-green-700">
-              Paper:{" "}
-              <a
-                href={`/papers/${selectedAuthor.latest_paper.id}`}
-                target="_blank"
-                rel="noreferrer"
-                className="underline hover:text-green-900"
-              >
-                {selectedAuthor.latest_paper.title}
-              </a>
-            </p>
-          ) : null}
-          <p className="mt-1 text-green-600">
-            You will be registered as a researcher linked to this profile.
-          </p>
-        </div>
-      ) : null}
-
-      {showNameSearch && !selectedAuthor ? (
-        <div className="space-y-3">
+      {showNameSearch ? (
+        <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
           <p className="text-sm text-slate-600">
-            Don't have an ORC ID? Search by your name to find and claim your
-            author profile.
+            Search by name and claim your author profile if ORC ID lookup does not match.
           </p>
           <div className="flex flex-col gap-2 sm:flex-row">
             <input
@@ -242,74 +229,91 @@ export function AuthorLookup({
               )}
             </button>
           </div>
-        </div>
-      ) : null}
 
-      {/* Name match list — hide once an unclaimed author is selected */}
-      {nameMatches.length > 0 && !(selectedAuthor && !selectedAuthor.is_claimed) ? (
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-3 text-sm">
-          <p className="font-medium text-slate-700">
-            Do any of these match your author profile?
-          </p>
-          {nameMatches.map((match) => {
-            const isSelected = selectedAuthor?.id === match.id;
-            return (
-              <div
-                key={match.id}
-                className={`flex items-start justify-between gap-4 border-b border-slate-200 pb-3 last:border-0 last:pb-0 rounded-lg px-2 py-1 transition-colors ${
-                  isSelected ? "bg-amber-50 border-amber-200" : ""
-                }`}
-              >
-                <div className="min-w-0">
-                  <p className="font-semibold text-slate-800">{match.name}</p>
-                  {match.latest_paper ? (
-                    <a
-                      href={`/papers/${match.latest_paper.id}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-slate-500 hover:underline block truncate"
+          {selectedAuthor && !selectedAuthor.is_claimed ? (
+            <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-900">
+              <p className="font-semibold">Profile Selected</p>
+              <p>Name: {selectedAuthor.name}</p>
+              {selectedAuthor.latest_paper ? (
+                <p className="text-green-700">
+                  Paper:{" "}
+                  <a
+                    href={`/papers/${selectedAuthor.latest_paper.id}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="underline hover:text-green-900"
+                  >
+                    {selectedAuthor.latest_paper.title}
+                  </a>
+                </p>
+              ) : null}
+              <p className="mt-1 text-green-600">
+                You will be registered as a researcher linked to this profile.
+              </p>
+            </div>
+          ) : null}
+
+          {nameMatches.length > 0 && !(selectedAuthor && !selectedAuthor.is_claimed) ? (
+            <div className="rounded-lg border border-slate-200 bg-white p-4 space-y-3 text-sm">
+              <p className="font-medium text-slate-700">
+                Do any of these match your author profile?
+              </p>
+              {nameMatches.map((match) => {
+                const isSelected = selectedAuthor?.id === match.id;
+                return (
+                  <div
+                    key={match.id}
+                    className={`flex items-start justify-between gap-4 border-b border-slate-200 pb-3 last:border-0 last:pb-0 rounded-lg px-2 py-1 transition-colors ${
+                      isSelected ? "bg-amber-50 border-amber-200" : ""
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      <p className="font-semibold text-slate-800">{match.name}</p>
+                      {match.latest_paper ? (
+                        <a
+                          href={`/papers/${match.latest_paper.id}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-slate-500 hover:underline block truncate"
+                        >
+                          {match.latest_paper.title}
+                        </a>
+                      ) : (
+                        <span className="text-slate-400">No papers on record</span>
+                      )}
+                      {match.is_claimed ? (
+                        <span className="text-xs text-amber-600">(already claimed)</span>
+                      ) : null}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleClaim(match)}
+                      disabled={disabled || isSelected}
+                      className={`shrink-0 rounded-lg px-3 py-1 text-xs font-semibold text-white transition-colors disabled:cursor-not-allowed ${
+                        isSelected
+                          ? "bg-slate-400"
+                          : "bg-slate-800 hover:bg-slate-900 disabled:opacity-60"
+                      }`}
                     >
-                      {match.latest_paper.title}
-                    </a>
-                  ) : (
-                    <span className="text-slate-400">No papers on record</span>
-                  )}
-                  {match.is_claimed ? (
-                    <span className="text-xs text-amber-600">
-                      (already claimed)
-                    </span>
-                  ) : null}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleClaim(match)}
-                  disabled={disabled || isSelected}
-                  className={`shrink-0 rounded-lg px-3 py-1 text-xs font-semibold text-white transition-colors disabled:cursor-not-allowed ${
-                    isSelected
-                      ? "bg-slate-400"
-                      : "bg-slate-800 hover:bg-slate-900 disabled:opacity-60"
-                  }`}
-                >
-                  {isSelected ? "Selected" : "Claim"}
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      ) : null}
+                      {isSelected ? "Selected" : "Claim"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
 
-      {/* Already-claimed author selected — amber info below the list */}
-      {selectedAuthor?.is_claimed ? (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          <p className="font-semibold">Profile already claimed</p>
-          <p>
-            The profile for <span className="font-medium">{selectedAuthor.name}</span> is
-            already associated with another account.
-          </p>
-          <p className="mt-1">
-            You will be registered as a general user and the admin will be
-            notified to help link your account.
-          </p>
+          {selectedAuthor?.is_claimed ? (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+              <p className="font-semibold">Profile already claimed</p>
+              <p>
+                The profile for <span className="font-medium">{selectedAuthor.name}</span> is already associated with another account.
+              </p>
+              <p className="mt-1">
+                You will be registered as a general user and the admin will be notified to help link your account.
+              </p>
+            </div>
+          ) : null}
         </div>
       ) : null}
     </div>

@@ -3,8 +3,17 @@ import { useNotifications } from "../context/NotificationContext";
 
 // shafnan start: part2 frontend notification bell UI
 function timeAgo(dateString) {
-  const diff = Date.now() - new Date(dateString).getTime();
+  if (!dateString) return "just now";
+  const raw = String(dateString).trim();
+  const withT = raw.includes("T") ? raw : raw.replace(" ", "T");
+  const hasZone = /(?:z|[+-]\d{2}(?::?\d{2})?)$/i.test(withT);
+  const normalized = hasZone ? withT : `${withT}Z`;
+  const createdMs = new Date(normalized).getTime();
+  if (Number.isNaN(createdMs)) return "just now";
+
+  const diff = Math.max(0, Date.now() - createdMs);
   const mins = Math.floor(diff / 60_000);
+
   if (mins < 1) return "just now";
   if (mins < 60) return `${mins}m ago`;
   const hrs = Math.floor(mins / 60);

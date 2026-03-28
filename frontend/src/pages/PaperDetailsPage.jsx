@@ -234,7 +234,16 @@ function PaperDetailsPage() {
         <section className="grid gap-4 md:grid-cols-2">
           <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Venue</h2>
-            <p className="mt-2 text-lg font-semibold text-slate-900">{paper.venue_name || "N/A"}</p>
+            {paper.venue_id ? (
+              <Link
+                to={`/venues/${paper.venue_id}`}
+                className="mt-2 inline-block text-lg font-semibold text-slate-900 hover:underline"
+              >
+                {paper.venue_name || "N/A"}
+              </Link>
+            ) : (
+              <p className="mt-2 text-lg font-semibold text-slate-900">{paper.venue_name || "N/A"}</p>
+            )}
             <p className="mt-1 text-sm text-slate-600">Type: {paper.venue_type || "N/A"}</p>
             <p className="mt-1 text-sm text-slate-600">ISSN: {paper.issn || "N/A"}</p>
             <p className="mt-1 text-sm text-slate-600">

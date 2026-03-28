@@ -3,7 +3,36 @@ const DB_Connection = require("../database/db.js");
 class ResearcherModel {
   constructor() {
     this.db = DB_Connection.getInstance();
+    this._instituteUptoColumn = null;
   }
+
+  getInstituteUptoColumn = async () => {
+    if (this._instituteUptoColumn) {
+      return this._instituteUptoColumn;
+    }
+
+    const query = `
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = 'institute_history'
+              AND column_name IN ('upto_date', 'to_date');
+        `;
+
+    const result = await this.db.query_executor(query);
+    const names = result.rows.map((row) => row.column_name);
+
+    if (names.includes("upto_date")) {
+      this._instituteUptoColumn = "upto_date";
+    } else if (names.includes("to_date")) {
+      this._instituteUptoColumn = "to_date";
+    } else {
+      // Keep current default schema expectation as fallback.
+      this._instituteUptoColumn = "upto_date";
+    }
+
+    return this._instituteUptoColumn;
+  };
 
   signupResearcher = async (payload) => {
     const client = await this.db.pool.connect();
@@ -180,10 +209,11 @@ class ResearcherModel {
     fromDate,
     uptoDate = null,
   ) => {
+    const uptoCol = await this.getInstituteUptoColumn();
     const query = `
-            INSERT INTO institute_history (researcher_id, institute_id, from_date, upto_date)
+            INSERT INTO institute_history (researcher_id, institute_id, from_date, ${uptoCol})
             VALUES ($1, $2, $3, $4)
-            RETURNING researcher_id, institute_id, from_date, upto_date;
+            RETURNING researcher_id, institute_id, from_date, ${uptoCol} AS upto_date;
         `;
 
     const params = [researcherId, instituteId, fromDate, uptoDate];
@@ -192,6 +222,7 @@ class ResearcherModel {
   };
 
   getInstituteHistory = async (researcherId) => {
+    const uptoCol = await this.getInstituteUptoColumn();
     const query = `
             SELECT
                 i.id AS institute_id,
@@ -199,7 +230,7 @@ class ResearcherModel {
                 i.country,
                 i.website_url,
                 ih.from_date,
-                ih.upto_date
+          ih.${uptoCol} AS upto_date
             FROM institute_history ih
             JOIN institute i ON i.id = ih.institute_id
             WHERE ih.researcher_id = $1
@@ -217,13 +248,14 @@ class ResearcherModel {
     fromDate,
     uptoDate,
   ) => {
+    const uptoCol = await this.getInstituteUptoColumn();
     const query = `
             UPDATE institute_history
-            SET upto_date = $4
+            SET ${uptoCol} = $4
             WHERE researcher_id = $1
               AND institute_id  = $2
               AND from_date     = $3
-            RETURNING researcher_id, institute_id, from_date, upto_date;
+            RETURNING researcher_id, institute_id, from_date, ${uptoCol} AS upto_date;
         `;
 
     const params = [researcherId, instituteId, fromDate, uptoDate];

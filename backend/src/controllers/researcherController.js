@@ -345,6 +345,12 @@ class ResearcherController {
           message: "upto_date must be on or after from_date.",
         });
       }
+      if (error.code === "P0001") {
+        return res.status(400).json({
+          success: false,
+          message: "Affiliation dates overlap with existing history. End the current affiliation before adding a new overlapping period.",
+        });
+      }
       console.error("[addInstituteHistory]", error.message);
       return res
         .status(500)
@@ -428,6 +434,12 @@ class ResearcherController {
         return res.status(400).json({
           success: false,
           message: "upto_date must be on or after from_date.",
+        });
+      }
+      if (error.code === "P0001") {
+        return res.status(400).json({
+          success: false,
+          message: "Affiliation dates overlap with existing history.",
         });
       }
       console.error("[updateInstituteHistory]", error.message);

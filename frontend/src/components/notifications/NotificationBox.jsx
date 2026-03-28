@@ -53,7 +53,15 @@ function ArrowIcon() {
 }
 
 function timeAgo(dateStr) {
-  const diff = Date.now() - new Date(dateStr).getTime();
+  if (!dateStr) return "just now";
+  const raw = String(dateStr).trim();
+  const withT = raw.includes("T") ? raw : raw.replace(" ", "T");
+  const hasZone = /(?:z|[+-]\d{2}(?::?\d{2})?)$/i.test(withT);
+  const normalized = hasZone ? withT : `${withT}Z`;
+  const createdMs = new Date(normalized).getTime();
+  if (Number.isNaN(createdMs)) return "just now";
+
+  const diff = Math.max(0, Date.now() - createdMs);
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return "just now";
   if (mins < 60) return `${mins}m ago`;
