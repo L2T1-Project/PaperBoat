@@ -35,11 +35,11 @@ export default function LandingPage() {
 						PaperBoat
 					</p>
 					<h1 className="mt-4 text-4xl font-black leading-tight sm:text-5xl">
-						Research discovery that feels
-						<span className="block text-emerald-700">fast, human, and focused.</span>
+						Find the right research,
+						<span className="block text-emerald-700">without the noise.</span>
 					</h1>
 					<p className="mt-4 max-w-xl text-base text-slate-700 sm:text-lg">
-						Move from paper exploration to meaningful profiles, claims, and collaboration signals in a single platform.
+						Discover credible papers, verify researcher profiles, and track meaningful academic activity in one clear workspace.
 					</p>
 
 					<div className="mt-7 flex flex-wrap gap-3">

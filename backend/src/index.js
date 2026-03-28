@@ -52,6 +52,7 @@ const publicRoutes = [
   { method: "GET", path: "/api/papers/field/:fieldId" },
   { method: "GET", path: "/api/papers/topic/:topicId" },
   { method: "GET", path: "/api/papers/:id" },
+  { method: "GET", path: "/api/papers/:id/cited-by" },
   { method: "GET", path: "/api/papers/:id/topics" },
   { method: "GET", path: "/api/topics" },
   { method: "GET", path: "/api/topics/domains" },

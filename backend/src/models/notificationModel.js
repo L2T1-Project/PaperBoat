@@ -45,7 +45,7 @@ class NotificationModel {
             SELECT
                 n.id,
                 n.message,
-                n.created_at,
+                (n.created_at AT TIME ZONE 'UTC') AS created_at,
                 nr.is_read,
                 -- Determine subtype and navigation target
                 CASE
@@ -245,7 +245,7 @@ class NotificationModel {
   getUserNotificationsEnhanced = async (userId, limit = 20) => {
     const query = `
       SELECT
-        n.id, n.message, n.created_at, nr.is_read,
+        n.id, n.message, (n.created_at AT TIME ZONE 'UTC') AS created_at, nr.is_read,
         CASE
           WHEN fn.notification_id IS NOT NULL THEN 'feedback'
           WHEN un.notification_id IS NOT NULL THEN 'follow'

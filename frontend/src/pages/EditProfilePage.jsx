@@ -54,6 +54,7 @@ export default function EditProfilePage() {
   const [bio, setBio] = useState("");
 
   const [institutes, setInstitutes] = useState([]);
+  const [instituteQuery, setInstituteQuery] = useState("");
   const [history, setHistory] = useState([]);
   const [newInstituteId, setNewInstituteId] = useState("");
   const [newFromDate, setNewFromDate] = useState("");
@@ -68,6 +69,16 @@ export default function EditProfilePage() {
 
   const canEditFullName = useMemo(() => profile?.role === "user", [profile?.role]);
   const isResearcher = profile?.role === "researcher";
+  const researcherUserId = useMemo(() => Number(profile?.user_id || userId || 0), [profile?.user_id, userId]);
+  const filteredInstitutes = useMemo(() => {
+    const q = instituteQuery.trim().toLowerCase();
+    if (!q) return institutes;
+    return institutes.filter((inst) => {
+      const name = String(inst.name || "").toLowerCase();
+      const country = String(inst.country || "").toLowerCase();
+      return name.includes(q) || country.includes(q);
+    });
+  }, [institutes, instituteQuery]);
 
   const fetchProfile = async () => {
     const response = await api.get("/users/me/profile");
@@ -79,11 +90,11 @@ export default function EditProfilePage() {
   };
 
   const fetchResearcherHistory = async () => {
-    if (!isResearcher || !userId) return;
+    if (!isResearcher || !researcherUserId) return;
 
     const [institutesRes, historyRes] = await Promise.all([
       api.get("/institutes"),
-      api.get(`/researchers/${userId}/institutes`),
+      api.get(`/researchers/${researcherUserId}/institutes`),
     ]);
 
     setInstitutes(institutesRes.data?.data || []);
@@ -108,7 +119,7 @@ export default function EditProfilePage() {
 
   useEffect(() => {
     fetchResearcherHistory().catch(() => {});
-  }, [isResearcher, userId]);
+  }, [isResearcher, researcherUserId]);
 
   const onSave = async (event) => {
     event.preventDefault();
@@ -194,18 +205,25 @@ export default function EditProfilePage() {
 
   const addInstituteHistory = async (event) => {
     event.preventDefault();
-    if (!newInstituteId || !newFromDate) return;
+    if (!researcherUserId) {
+      setError("Researcher identity was not resolved. Please refresh and try again.");
+      return;
+    }
+    if (!newInstituteId || !newFromDate) {
+      setError("Please select an institute and start date.");
+      return;
+    }
 
     try {
       setHistoryBusy(true);
       setError("");
-      await api.post(`/researchers/${userId}/institutes`, {
+      await api.post(`/researchers/${researcherUserId}/institutes`, {
         institute_id: Number(newInstituteId),
         from_date: newFromDate,
         upto_date: newUptoDate || null,
       });
 
-      const historyRes = await api.get(`/researchers/${userId}/institutes`);
+      const historyRes = await api.get(`/researchers/${researcherUserId}/institutes`);
       setHistory(historyRes.data?.data || []);
       setNewInstituteId("");
       setNewFromDate("");
@@ -218,13 +236,17 @@ export default function EditProfilePage() {
   };
 
   const removeInstituteHistory = async (entry) => {
+    if (!researcherUserId) {
+      setError("Researcher identity was not resolved. Please refresh and try again.");
+      return;
+    }
     try {
       setHistoryBusy(true);
       setError("");
-      await api.delete(`/researchers/${userId}/institutes/${entry.institute_id}`, {
+      await api.delete(`/researchers/${researcherUserId}/institutes/${entry.institute_id}`, {
         data: { from_date: entry.from_date },
       });
-      const historyRes = await api.get(`/researchers/${userId}/institutes`);
+      const historyRes = await api.get(`/researchers/${researcherUserId}/institutes`);
       setHistory(historyRes.data?.data || []);
     } catch (err) {
       setError(err?.response?.data?.message || "Failed to remove institute history.");
@@ -380,6 +402,13 @@ export default function EditProfilePage() {
           <p className="mt-1 text-sm text-slate-600">Add your institute affiliations over time.</p>
 
           <form className="mt-4 grid gap-3 sm:grid-cols-4" onSubmit={addInstituteHistory}>
+            <input
+              type="text"
+              value={instituteQuery}
+              onChange={(e) => setInstituteQuery(e.target.value)}
+              placeholder="Search institute by name or country"
+              className="rounded-md border border-slate-300 px-3 py-2 text-sm sm:col-span-4"
+            />
             <select
               value={newInstituteId}
               onChange={(e) => setNewInstituteId(e.target.value)}
@@ -387,10 +416,13 @@ export default function EditProfilePage() {
               required
             >
               <option value="">Select Institute</option>
-              {institutes.map((inst) => (
+              {filteredInstitutes.map((inst) => (
                 <option key={inst.id} value={inst.id}>{inst.name}</option>
               ))}
             </select>
+            {!filteredInstitutes.length ? (
+              <p className="text-xs text-slate-500 sm:col-span-2">No institutes match your search.</p>
+            ) : null}
             <input type="date" value={newFromDate} onChange={(e) => setNewFromDate(e.target.value)} className="rounded-md border border-slate-300 px-3 py-2 text-sm" required />
             <input type="date" value={newUptoDate} onChange={(e) => setNewUptoDate(e.target.value)} className="rounded-md border border-slate-300 px-3 py-2 text-sm" />
             <button type="submit" disabled={historyBusy} className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 sm:col-span-4">

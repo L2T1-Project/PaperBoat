@@ -153,12 +153,16 @@ export function SignupForm() {
 
   const onSubmit = async (values) => {
     setServerError("");
-
     const isClaimedFallback =
       selectedRole === "researcher" && Boolean(claimedAlreadyAuthor);
 
-    if (selectedRole === "researcher" && !values.orc_id?.trim() && !claimedAlreadyAuthor) {
-      setServerError("ORC ID is required before lookup.");
+    if (
+      selectedRole === "researcher" &&
+      !values.orc_id?.trim() &&
+      !claimedAlreadyAuthor &&
+      !resolvedAuthor?.id
+    ) {
+      setServerError("ORC ID is required before lookup. Or use name search to claim your profile.");
       return;
     }
 
@@ -169,7 +173,7 @@ export function SignupForm() {
 
     if (selectedRole === "researcher" && !resolvedAuthor && !claimedAlreadyAuthor) {
       setServerError(
-        "Please complete a successful ORC ID lookup or claim a profile.",
+        "Please complete a successful ORC ID lookup or claim a profile by name.",
       );
       return;
     }
