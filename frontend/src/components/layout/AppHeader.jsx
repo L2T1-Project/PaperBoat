@@ -15,6 +15,7 @@ const ROLE_NAV = {
     { to: "/authors", label: "Authors", match: (path) => path.startsWith("/authors") },
     { to: "/venues", label: "Venues", match: (path) => path.startsWith("/venues") },
     { to: "/dashboard", label: "Dashboard", match: (path) => path === "/dashboard" },
+    { to: "/statistics", label: "Statistics", match: (path) => path === "/statistics" },
     { to: "/library", label: "My Library", match: (path) => path === "/library" },
     { to: "/feedback", label: "Feedback", match: (path) => path.startsWith("/feedback") },
   ],
@@ -23,6 +24,8 @@ const ROLE_NAV = {
     { to: "/authors", label: "Authors", match: (path) => path.startsWith("/authors") },
     { to: "/venues", label: "Venues", match: (path) => path.startsWith("/venues") },
     { to: "/dashboard", label: "Dashboard", match: (path) => path === "/dashboard" },
+    { to: "/statistics", label: "Statistics", match: (path) => path === "/statistics" },
+    { to: "/researchers/me/suggest-paper", label: "Suggest Paper", match: (path) => path.includes('/suggest-paper') },
     { to: "/library", label: "My Library", match: (path) => path === "/library" },
     { to: "/feedback", label: "Feedback", match: (path) => path.startsWith("/feedback") },
   ],
@@ -31,6 +34,7 @@ const ROLE_NAV = {
     { to: "/authors", label: "Authors", match: (path) => path.startsWith("/authors") },
     { to: "/venues", label: "Venues", match: (path) => path.startsWith("/venues") },
     { to: "/dashboard", label: "Dashboard", match: (path) => path === "/dashboard" },
+    { to: "/statistics", label: "Statistics", match: (path) => path === "/statistics" },
     { to: "/library", label: "My Library", match: (path) => path === "/library" },
     { to: "/feedback", label: "Feedback", match: (path) => path.startsWith("/feedback") },
   ],
@@ -39,7 +43,9 @@ const ROLE_NAV = {
     { to: "/authors", label: "Authors", match: (path) => path.startsWith("/authors") },
     { to: "/venues", label: "Venues", match: (path) => path.startsWith("/venues") },
     { to: "/dashboard", label: "Dashboard", match: (path) => path === "/dashboard" },
+    { to: "/statistics", label: "Statistics", match: (path) => path === "/statistics" },
     { to: "/admin/claims", label: "Claim Queue", match: (path) => path === "/admin/claims" },
+    { to: "/admin/papers", label: "Add Paper", match: (path) => path === "/admin/papers" },
     { to: "/admin/feedback", label: "Feedback Inbox", match: (path) => path === "/admin/feedback" },
   ],
 };
@@ -105,6 +111,12 @@ export default function AppHeader() {
     location.pathname === "/login" || location.pathname === "/signup";
   const roleKey = isAuthenticated ? user?.role || "user" : "guest";
   const navItems = ROLE_NAV[roleKey] || ROLE_NAV.user;
+  const resolvedNavItems = navItems.map((item) => {
+    if (item.to === '/researchers/me/suggest-paper' && user?.userId) {
+      return { ...item, to: `/researchers/${user.userId}/suggest-paper` };
+    }
+    return item;
+  });
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200/90 bg-white/95 backdrop-blur">
@@ -119,7 +131,7 @@ export default function AppHeader() {
         <div className="flex items-center gap-2">
           {!isAuthPage && (
             <>
-              {navItems.map((item) => (
+              {resolvedNavItems.map((item) => (
                 <NavLink
                   key={`${item.to}-${item.label}`}
                   to={item.to}

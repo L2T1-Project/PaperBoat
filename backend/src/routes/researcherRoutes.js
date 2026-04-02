@@ -19,6 +19,9 @@ class ResearcherRouter {
         this.router.post('/:id/claims',  this.researcherController.createPaperClaim);
         this.router.delete('/:id/claims/:paperId',  this.researcherController.deletePaperClaim);
 
+        this.router.get('/:id/paper-suggestions', this.researcherController.getMyPaperSuggestions);
+        this.router.post('/:id/paper-suggestions', this.researcherController.submitPaperSuggestion);
+
         this.router.get('/:id/institutes', this.researcherController.getInstituteHistory);
         this.router.post('/:id/institutes',  this.researcherController.addInstituteHistory);
         this.router.put('/:id/institutes/:instituteId', this.researcherController.updateInstituteHistory);

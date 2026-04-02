@@ -216,6 +216,85 @@ class TopicController {
             return res.status(500).json({ error: 'Internal server error' });
         }
     }
+
+    getSummaryStats = async (req, res) => {
+        try {
+            const summary = await this.topicModel.getPlatformSummaryStats();
+            return res.status(200).json({ success: true, data: summary });
+        } catch (err) {
+            console.error('TopicController.getSummaryStats:', err);
+            return res.status(500).json({ success: false, message: 'Internal server error' });
+        }
+    }
+
+    getTopicMomentum = async (req, res) => {
+        try {
+            const { limit = 10, windowDays = 90 } = req.query;
+
+            const safeLimit = Math.min(50, Math.max(1, Number(limit) || 10));
+            const safeWindowDays = Math.min(365, Math.max(30, Number(windowDays) || 90));
+
+            const rows = await this.topicModel.getTopicMomentum(safeLimit, safeWindowDays);
+            return res.status(200).json({
+                success: true,
+                data: rows,
+                meta: {
+                    limit: safeLimit,
+                    window_days: safeWindowDays,
+                    formula: '0.7 * citation_growth_rate + 0.3 * paper_growth_rate',
+                },
+            });
+        } catch (err) {
+            console.error('TopicController.getTopicMomentum:', err);
+            return res.status(500).json({ success: false, message: 'Internal server error' });
+        }
+    }
+
+    getMostCitedPapers = async (req, res) => {
+        try {
+            const { limit = 10 } = req.query;
+            const safeLimit = Math.min(50, Math.max(1, Number(limit) || 10));
+
+            const rows = await this.topicModel.getMostCitedPapers(safeLimit);
+            return res.status(200).json({ success: true, count: rows.length, data: rows });
+        } catch (err) {
+            console.error('TopicController.getMostCitedPapers:', err);
+            return res.status(500).json({ success: false, message: 'Internal server error' });
+        }
+    }
+
+    getTopAuthorsByTopic = async (req, res) => {
+        try {
+            const { topicId } = req.params;
+            const { limit = 10 } = req.query;
+
+            if (isNaN(topicId)) {
+                return res.status(400).json({ success: false, message: 'topicId must be a number.' });
+            }
+
+            const safeLimit = Math.min(50, Math.max(1, Number(limit) || 10));
+            const topic = await this.topicModel.getTopicById(Number(topicId));
+            if (!topic) {
+                return res.status(404).json({ success: false, message: 'Topic not found.' });
+            }
+
+            const rows = await this.topicModel.getTopAuthorsByTopicCitations(Number(topicId), safeLimit);
+            return res.status(200).json({
+                success: true,
+                count: rows.length,
+                data: rows,
+                meta: {
+                    topic_id: Number(topicId),
+                    topic_name: topic.name,
+                    field_name: topic.field_name,
+                    domain_name: topic.domain_name,
+                },
+            });
+        } catch (err) {
+            console.error('TopicController.getTopAuthorsByTopic:', err);
+            return res.status(500).json({ success: false, message: 'Internal server error' });
+        }
+    }
 }
 
 module.exports = TopicController;

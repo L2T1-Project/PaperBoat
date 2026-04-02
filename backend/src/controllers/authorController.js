@@ -1,4 +1,5 @@
 const AuthorModel = require("../models/authorModel.js");
+const { normalizeAndValidateOrcId } = require("../utils/orcidUtils.js");
 
 class AuthorController {
   constructor() {
@@ -16,7 +17,15 @@ class AuthorController {
         });
       }
 
-      const author = await this.authorModel.createAuthor({ name, orc_id });
+      const { normalizedOrcId, error: orcError } = normalizeAndValidateOrcId(orc_id);
+      if (orcError) {
+        return res.status(400).json({
+          success: false,
+          message: orcError,
+        });
+      }
+
+      const author = await this.authorModel.createAuthor({ name, orc_id: normalizedOrcId });
 
       return res.status(201).json({
         success: true,
@@ -39,18 +48,24 @@ class AuthorController {
 
   getAllAuthors = async (req, res) => {
     try {
-      const { orc_id, name } = req.query;
+      const { orc_id, name, include_claimed } = req.query;
 
       if (orc_id) {
-        const author = await this.authorModel.getAuthorByOrcId(orc_id);
+        const { normalizedOrcId, error: orcError } = normalizeAndValidateOrcId(orc_id);
+        if (orcError) {
+          return res.status(400).json({ error: orcError });
+        }
+
+        const author = await this.authorModel.getAuthorByOrcId(normalizedOrcId);
         if (!author) {
           return res
             .status(404)
             .json({ error: "No author found with this ORCID." });
         }
 
+        const includeClaimed = String(include_claimed || "").toLowerCase() === "true";
         const claimed = await this.authorModel.isAuthorClaimed(author.id);
-        if (claimed) {
+        if (claimed && !includeClaimed) {
           return res.status(409).json({
             error:
               "This ORCID is already associated with an account. Please contact support.",
@@ -140,9 +155,17 @@ class AuthorController {
           .json({ success: false, message: "name is required." });
       }
 
+      const { normalizedOrcId, error: orcError } = normalizeAndValidateOrcId(orc_id);
+      if (orcError) {
+        return res.status(400).json({
+          success: false,
+          message: orcError,
+        });
+      }
+
       const author = await this.authorModel.updateAuthor(Number(id), {
         name,
-        orc_id,
+        orc_id: normalizedOrcId,
       });
 
       if (!author) {

@@ -1,5 +1,9 @@
 const ResearcherModel = require("../models/researcherModel.js");
 const UserModel = require("../models/userModel.js");
+const FeedbackModel = require("../models/feedbackModel.js");
+const PaperModel = require("../models/paperModel.js");
+const NotificationModel = require("../models/notificationModel.js");
+const { normalizeAndValidateOrcId } = require("../utils/orcidUtils.js");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
@@ -7,6 +11,9 @@ class ResearcherController {
   constructor() {
     this.researcherModel = new ResearcherModel();
     this.userModel = new UserModel();
+    this.feedbackModel = new FeedbackModel();
+    this.paperModel = new PaperModel();
+    this.notificationModel = new NotificationModel();
   }
 
   ensureResearcherSelf = (req, res, researcherId) => {
@@ -525,6 +532,166 @@ class ResearcherController {
       return res
         .status(500)
         .json({ success: false, message: "Internal server error." });
+    }
+  };
+
+  submitPaperSuggestion = async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { title, publication_date, doi, pdf_url, github_repo, venue_id, topic_id, authors, is_retracted, notes } = req.body;
+
+      const authError = this.ensureResearcherSelf(req, res, id);
+      if (authError) return authError;
+
+      if (!title?.trim() || !publication_date || !venue_id || isNaN(venue_id) || !topic_id || isNaN(topic_id)) {
+        return res.status(400).json({
+          success: false,
+          message: "title, publication_date, numeric venue_id and numeric topic_id are required.",
+        });
+      }
+
+      if (!Array.isArray(authors) || authors.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "At least one author is required.",
+        });
+      }
+
+      const normalizedAuthors = [];
+      for (let index = 0; index < authors.length; index += 1) {
+        const entry = authors[index];
+        const { normalizedOrcId, error: orcError } = normalizeAndValidateOrcId(entry?.orc_id);
+        if (orcError) {
+          return res.status(400).json({
+            success: false,
+            message: `Invalid ORCID for author at row ${index + 1}: ${orcError}`,
+          });
+        }
+
+        normalizedAuthors.push({
+          author_id: entry?.author_id ? Number(entry.author_id) : null,
+          name: entry?.name?.trim() || null,
+          position: Number(entry?.position),
+          orc_id: normalizedOrcId,
+        });
+      }
+
+      const invalidAuthor = normalizedAuthors.find((entry) => {
+        const hasExisting = Number.isInteger(entry.author_id) && entry.author_id > 0;
+        const hasName = Boolean(entry.name);
+        const validPosition = Number.isInteger(entry.position) && entry.position > 0;
+        return !validPosition || (!hasExisting && !hasName);
+      });
+
+      if (invalidAuthor) {
+        return res.status(400).json({
+          success: false,
+          message: "Each author must have a valid position and either selected existing author or a new author name.",
+        });
+      }
+
+      const uniquePositions = new Set(normalizedAuthors.map((entry) => entry.position));
+      if (uniquePositions.size !== normalizedAuthors.length) {
+        return res.status(400).json({
+          success: false,
+          message: "Author positions must be unique.",
+        });
+      }
+
+      const duplicatePapers = await this.paperModel.findDuplicateCandidates(title, doi || null);
+      if (duplicatePapers.length) {
+        return res.status(409).json({
+          success: false,
+          message: "Similar paper already exists in the catalog.",
+          data: { duplicates: duplicatePapers },
+        });
+      }
+
+      const duplicateSuggestions = await this.feedbackModel.findPendingPaperSuggestionDuplicates(title, doi || null);
+      if (duplicateSuggestions.length) {
+        return res.status(409).json({
+          success: false,
+          message: "A similar pending suggestion is already in the admin queue.",
+          data: { duplicates: duplicateSuggestions.map((row) => ({ id: row.id, created_at: row.created_at, sender_name: row.sender_name })) },
+        });
+      }
+
+      const adminUserId = await this.feedbackModel.getAnyAdminUserId();
+      if (!adminUserId) {
+        return res.status(503).json({ success: false, message: "No admin available to review suggestions." });
+      }
+
+      const suggestionPayload = {
+        title: title.trim(),
+        publication_date,
+        doi: doi?.trim() || null,
+        pdf_url: pdf_url?.trim() || null,
+        github_repo: github_repo?.trim() || null,
+        venue_id: Number(venue_id),
+        topic_id: Number(topic_id),
+        authors: normalizedAuthors,
+        is_retracted: Boolean(is_retracted),
+        notes: notes?.trim() || null,
+      };
+
+      const suggestion = await this.feedbackModel.createPaperSuggestion(Number(id), adminUserId, suggestionPayload);
+
+      const senderName = req.user?.full_name || "A researcher";
+      this.notificationModel
+        .notifyAdminNewFeedback(suggestion.id, adminUserId, senderName)
+        .catch((err) => console.error("paper suggestion admin notif error:", err));
+
+      return res.status(201).json({
+        success: true,
+        message: "Paper suggestion submitted for admin review.",
+        data: {
+          id: suggestion.id,
+          created_at: suggestion.created_at,
+          suggestion_status: "pending",
+          suggested_paper: suggestionPayload,
+        },
+      });
+    } catch (error) {
+      console.error("[submitPaperSuggestion]", error.message);
+      return res.status(500).json({ success: false, message: "Internal server error." });
+    }
+  };
+
+  getMyPaperSuggestions = async (req, res) => {
+    try {
+      const { id } = req.params;
+      const authError = this.ensureResearcherSelf(req, res, id);
+      if (authError) return authError;
+
+      const suggestions = await this.feedbackModel.getPaperSuggestionsBySender(Number(id));
+      const data = suggestions.map((row) => {
+        let suggestedPaper = null;
+        let moderationNote = row.response || null;
+        if (typeof moderationNote === "string" && moderationNote.startsWith("APPROVED::")) {
+          moderationNote = moderationNote.split("::")[2] || null;
+        } else if (typeof moderationNote === "string" && moderationNote.startsWith("REJECTED::")) {
+          moderationNote = moderationNote.slice("REJECTED::".length) || null;
+        }
+        try {
+          suggestedPaper = JSON.parse(row.message);
+        } catch {
+          suggestedPaper = null;
+        }
+
+        return {
+          id: row.id,
+          created_at: row.created_at,
+          responded_at: row.responded_at,
+          suggestion_status: row.suggestion_status,
+          moderation_note: moderationNote,
+          suggested_paper: suggestedPaper,
+        };
+      });
+
+      return res.status(200).json({ success: true, count: data.length, data });
+    } catch (error) {
+      console.error("[getMyPaperSuggestions]", error.message);
+      return res.status(500).json({ success: false, message: "Internal server error." });
     }
   };
 }
