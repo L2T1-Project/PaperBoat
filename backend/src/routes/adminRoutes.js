@@ -19,6 +19,9 @@ class AdminRouter {
         this.#router.get('/claims/:status',                            this.#controller.getPaperClaimsByStatus);
         this.#router.patch('/claims/:researcherId/:paperId',           this.#controller.updatePaperClaimStatus);
 
+        this.#router.get('/paper-suggestions',                         this.#controller.getPaperSuggestions);
+        this.#router.patch('/paper-suggestions/:id/review',            this.#controller.reviewPaperSuggestion);
+
         this.#router.get('/:id',   this.#controller.getAdminById);
         this.#router.delete('/:id',this.#controller.demoteAdmin);
     }

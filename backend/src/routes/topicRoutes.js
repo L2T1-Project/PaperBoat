@@ -25,6 +25,10 @@ class TopicRouter {
 
         this.router.post('/',                     this.topicController.createTopic);
         this.router.get('/',                      this.topicController.getAllTopics);
+        this.router.get('/stats/summary',         this.topicController.getSummaryStats);
+        this.router.get('/stats/momentum',        this.topicController.getTopicMomentum);
+        this.router.get('/stats/top-cited-papers', this.topicController.getMostCitedPapers);
+        this.router.get('/stats/topics/:topicId/top-authors', this.topicController.getTopAuthorsByTopic);
         this.router.get('/:id',                   this.topicController.getTopicById);
         this.router.put('/:id',                   this.topicController.updateTopic);
         this.router.delete('/:id',                this.topicController.deleteTopic);

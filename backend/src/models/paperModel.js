@@ -24,7 +24,7 @@ class PaperModel {
             INSERT into "paper"
             (title, publication_date, pdf_url, doi, is_retracted, github_repo, venue_id)
             VALUES ($1, $2, $3, $4, $5, $6, $7)
-            RETURNING title, publication_date, pdf_url, doi, is_retracted, github_repo, venue_id;
+            RETURNING id, title, publication_date, pdf_url, doi, is_retracted, github_repo, venue_id;
         `;
 
         const params = [title, publication_date, pdf_url, doi, is_retracted, github_repo, venue_id];
@@ -307,7 +307,7 @@ class PaperModel {
                 github_repo = $7,
                 venue_id = $8
             WHERE id = $1
-            RETURNING title, publication_date, pdf_url, doi, is_retracted, github_repo, venue_id; 
+            RETURNING id, title, publication_date, pdf_url, doi, is_retracted, github_repo, venue_id; 
         `;
 
         const params = [id, title, publication_date, pdf_url, doi, is_retracted, github_repo, venue_id];
@@ -421,6 +421,33 @@ class PaperModel {
         const params = [paperId, topicId];
         const result = await this.db.query_executor(query, params);
         return result.rows[0] || null;
+    }
+
+    findDuplicateCandidates = async (title, doi = null) => {
+        const safeTitle = String(title || '').trim();
+        if (!safeTitle) {
+            return [];
+        }
+
+        const params = [safeTitle.toLowerCase()];
+        let doiClause = '';
+        if (doi && String(doi).trim()) {
+            params.push(String(doi).trim().toLowerCase());
+            doiClause = "OR LOWER(COALESCE(p.doi, '')) = $2";
+        }
+
+        const query = `
+            SELECT p.id, p.title, p.doi, p.publication_date, v.name AS venue_name
+            FROM paper p
+            JOIN venue v ON v.id = p.venue_id
+            WHERE LOWER(p.title) = $1
+              ${doiClause}
+            ORDER BY p.publication_date DESC NULLS LAST, p.id DESC
+            LIMIT 20;
+        `;
+
+        const result = await this.db.query_executor(query, params);
+        return result.rows;
     }
 }
 
