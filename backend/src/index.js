@@ -22,6 +22,7 @@ const NotificationRouter = require("./routes/notificationRoutes.js");
 const FollowRouter = require("./routes/followRoutes.js");
 const FeedbackRouter = require("./routes/feedbackRoutes.js");
 const LibraryRouter = require("./routes/libraryRoutes.js");
+const ClaimRouter = require("./routes/claimRoutes.js");
 
 const app = express();
 app.use(express.json());
@@ -148,6 +149,9 @@ app.use("/api/feedback", feedbackRouter.getRouter());
 
 const libraryRouter = new LibraryRouter();
 app.use("/api/library", libraryRouter.getRouter());
+
+const claimRouter = new ClaimRouter();
+app.use("/api/claims", claimRouter.getRouter());
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

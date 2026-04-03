@@ -195,3 +195,142 @@ BEGIN
     ON CONFLICT (notification_id, user_id) DO NOTHING;
 END;
 $$;
+
+
+-- validate and insert a duplicate-author claim submitted during signup
+CREATE OR REPLACE PROCEDURE submit_author_claim(
+    p_claimant_user_id  INTEGER,
+    p_claimed_author_id INTEGER,
+    p_claim_text        TEXT
+)
+LANGUAGE plpgsql AS $$
+BEGIN
+    -- the claimed author must already be linked to some researcher
+    IF NOT EXISTS (
+        SELECT 1 FROM researcher WHERE author_id = p_claimed_author_id
+    ) THEN
+        RAISE EXCEPTION 'No existing researcher is linked to this author.';
+    END IF;
+
+    -- the claimant must not already be a researcher themselves
+    IF EXISTS (
+        SELECT 1 FROM researcher WHERE user_id = p_claimant_user_id
+    ) THEN
+        RAISE EXCEPTION 'Claimant is already a researcher.';
+    END IF;
+
+    INSERT INTO author_claim_request (claimant_user_id, claimed_author_id, claim_text)
+    VALUES (p_claimant_user_id, p_claimed_author_id, p_claim_text);
+END;
+$$;
+
+
+-- swap researcher ownership when admin approves a duplicate-author claim
+CREATE OR REPLACE PROCEDURE approve_author_claim(
+    p_claim_id      INTEGER,
+    p_admin_user_id INTEGER
+)
+LANGUAGE plpgsql AS $$
+DECLARE
+    v_claimant_user_id       INTEGER;
+    v_claimed_author_id      INTEGER;
+    v_old_researcher_user_id INTEGER;
+    v_author_name            VARCHAR(255);
+    v_notif_id               INTEGER;
+BEGIN
+    SELECT claimant_user_id, claimed_author_id
+    INTO v_claimant_user_id, v_claimed_author_id
+    FROM author_claim_request
+    WHERE id = p_claim_id AND status = 'pending';
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Claim not found or already resolved.';
+    END IF;
+
+    SELECT user_id INTO v_old_researcher_user_id
+    FROM researcher WHERE author_id = v_claimed_author_id;
+
+    SELECT name INTO v_author_name FROM author WHERE id = v_claimed_author_id;
+
+    -- demote the old researcher
+    DELETE FROM researcher WHERE author_id = v_claimed_author_id;
+
+    -- promote the claimant
+    INSERT INTO researcher (user_id, author_id)
+    VALUES (v_claimant_user_id, v_claimed_author_id);
+
+    UPDATE author_claim_request
+    SET status = 'approved', resolved_at = now(), resolved_by = p_admin_user_id
+    WHERE id = p_claim_id;
+
+    -- notify old researcher (demoted)
+    INSERT INTO notification (message)
+    VALUES ('Your researcher status for author profile "' || v_author_name ||
+            '" has been revoked due to a verified ownership claim. Contact support if you believe this is an error.')
+    RETURNING id INTO v_notif_id;
+
+    INSERT INTO notification_receiver (notification_id, user_id)
+    VALUES (v_notif_id, v_old_researcher_user_id);
+
+    -- notify claimant (approved)
+    INSERT INTO notification (message)
+    VALUES ('Your claim to author profile "' || v_author_name ||
+            '" has been approved. You are now a verified researcher.')
+    RETURNING id INTO v_notif_id;
+
+    INSERT INTO notification_receiver (notification_id, user_id)
+    VALUES (v_notif_id, v_claimant_user_id);
+END;
+$$;
+
+
+-- reject a duplicate-author claim and notify both parties
+CREATE OR REPLACE PROCEDURE reject_author_claim(
+    p_claim_id      INTEGER,
+    p_admin_user_id INTEGER
+)
+LANGUAGE plpgsql AS $$
+DECLARE
+    v_claimant_user_id       INTEGER;
+    v_claimed_author_id      INTEGER;
+    v_old_researcher_user_id INTEGER;
+    v_author_name            VARCHAR(255);
+    v_notif_id               INTEGER;
+BEGIN
+    SELECT claimant_user_id, claimed_author_id
+    INTO v_claimant_user_id, v_claimed_author_id
+    FROM author_claim_request
+    WHERE id = p_claim_id AND status = 'pending';
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Claim not found or already resolved.';
+    END IF;
+
+    SELECT user_id INTO v_old_researcher_user_id
+    FROM researcher WHERE author_id = v_claimed_author_id;
+
+    SELECT name INTO v_author_name FROM author WHERE id = v_claimed_author_id;
+
+    UPDATE author_claim_request
+    SET status = 'rejected', resolved_at = now(), resolved_by = p_admin_user_id
+    WHERE id = p_claim_id;
+
+    -- notify current researcher (warn them of the attempt)
+    INSERT INTO notification (message)
+    VALUES ('Someone attempted to claim your author profile "' || v_author_name ||
+            '". No action was taken. Please stay vigilant.')
+    RETURNING id INTO v_notif_id;
+
+    INSERT INTO notification_receiver (notification_id, user_id)
+    VALUES (v_notif_id, v_old_researcher_user_id);
+
+    -- notify claimant (rejected)
+    INSERT INTO notification (message)
+    VALUES ('Your claim to author profile "' || v_author_name ||
+            '" has been reviewed and declined.')
+    RETURNING id INTO v_notif_id;
+
+    INSERT INTO notification_receiver (notification_id, user_id)
+    VALUES (v_notif_id, v_claimant_user_id);
+END;
+$$;
