@@ -14,7 +14,7 @@ class AuthenticateToken {
 
       const authHeader =
         req.headers["authorization"] || req.headers["Authorization"];
-      const token = authHeader && authHeader.split(" ")[1];
+      const token = authHeader && authHeader.split(" ")[1]; // bearer prefix shoray feli
 
       if (!token) {
         return res.status(401).json({
