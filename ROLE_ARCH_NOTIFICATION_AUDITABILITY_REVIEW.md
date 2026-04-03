@@ -158,52 +158,10 @@ Add admin audit page:
 2. Daily report for moderation actions.
 3. Break-glass event marker for emergency actions.
 
-## 4. Empty-State and Disabled-State Inconsistencies
 
-Below are current inconsistencies observed in role pages and adjacent role UX.
-
-### 4.1 Empty-state inconsistencies
-
-1. Dashboard venue section has no empty-state text when All Published Papers is expanded and list is empty.
-   - File: frontend/src/pages/DashboardPage.jsx
-   - Impact: blank block after toggling Show all.
-
-2. Researcher dashboard uses simple text empty state, while library/feedback/admin pages use icon + richer CTA styles.
-   - Files:
-     - frontend/src/pages/DashboardPage.jsx
-     - frontend/src/pages/MyLibraryPage.jsx
-     - frontend/src/pages/FeedbackPage.jsx
-     - frontend/src/pages/AdminFeedbackPage.jsx
-   - Impact: inconsistent perceived product quality and guidance depth.
-
-3. Claims pages use minimal empty text without action CTA links.
-   - Files:
-     - frontend/src/pages/ResearcherClaimsPage.jsx
-     - frontend/src/pages/AdminClaimsPage.jsx
-   - Impact: users are not guided to the next best step.
-
-### 4.2 Disabled-state explanation inconsistencies
-
-1. Many disabled actions do not provide reason text/tooltips.
-   - Examples:
-     - Submit button in feedback page disables on empty message but no inline hint near button.
-     - Approve/Decline buttons in admin claims page disable during update without contextual message.
-
-2. Previously, author follow action disappeared if no linked user account.
-   - Now addressed by showing disabled Follow unavailable state with tooltip.
-   - Files:
-     - frontend/src/components/FollowButton.jsx
-     - frontend/src/pages/AuthorPage.jsx
-
-3. Review/vote actions show auth-required errors after click, but no pre-disabled affordance for guests.
-   - File: frontend/src/pages/PaperReviewsPage.jsx
-   - Impact: reactive error feedback rather than proactive guidance.
 
 ## 5. Immediate Next Improvements (Practical)
 
-1. Create a shared EmptyState component with icon, title, body, and CTA slot.
-2. Create a shared DisabledReason helper (tooltip + assistive text) for disabled controls.
-3. Add role-specific nav config in one place to avoid drift.
 4. Add an admin audit_log write path for claim and feedback moderation events first.
 5. Add notification preferences backend first, then lightweight frontend settings panel.
 

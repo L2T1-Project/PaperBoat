@@ -20,6 +20,9 @@ import FeedbackPage from './pages/FeedbackPage';
 import AdminFeedbackPage from './pages/AdminFeedbackPage';
 import MyLibraryPage from './pages/MyLibraryPage';
 import EditProfilePage from './pages/EditProfilePage';
+import ResearcherSuggestPaperPage from './pages/ResearcherSuggestPaperPage';
+import AdminAddPaperPage from './pages/AdminAddPaperPage';
+import StatisticsPage from './pages/StatisticsPage';
 
 function App() {
   return (
@@ -59,10 +62,26 @@ function App() {
             }
           />
           <Route
+            path="/researchers/:id/suggest-paper"
+            element={
+              <ProtectedRoute allowedRoles={["researcher"]} requireUserIdParam="id">
+                <ResearcherSuggestPaperPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/admin/claims"
             element={
               <ProtectedRoute allowedRoles={["admin"]}>
                 <AdminClaimsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/papers"
+            element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <AdminAddPaperPage />
               </ProtectedRoute>
             }
           />
@@ -76,6 +95,7 @@ function App() {
           <Route path="/feedback/my" element={<ProtectedRoute><FeedbackPage /></ProtectedRoute>} />
           <Route path="/library" element={<ProtectedRoute><MyLibraryPage /></ProtectedRoute>} />
           <Route path="/profile/edit" element={<ProtectedRoute><EditProfilePage /></ProtectedRoute>} />
+          <Route path="/statistics" element={<ProtectedRoute><StatisticsPage /></ProtectedRoute>} />
 
           {/* Admin only */}
           <Route
