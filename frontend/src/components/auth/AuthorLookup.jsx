@@ -83,9 +83,19 @@ export function AuthorLookup({
         params: { orc_id: orcId },
       });
 
-      setAuthor(response.data);
+      const matchedAuthor = response.data;
       setResolvedOrcId(orcId);
-      onLookupSuccess(response.data);
+
+      if (matchedAuthor?.is_claimed) {
+        setAuthor(null);
+        setShowNameSearch(false);
+        setNameMatches([]);
+        setLookupError("");
+        handleClaim(matchedAuthor);
+      } else {
+        setAuthor(matchedAuthor);
+        onLookupSuccess(matchedAuthor);
+      }
     } catch (error) {
       const status = error?.response?.status;
       const apiMessage = error?.response?.data?.error;
@@ -106,8 +116,6 @@ export function AuthorLookup({
           );
         }
         return;
-      } else if (status === 409 && apiMessage) {
-        setLookupError(apiMessage);
       } else if (apiMessage) {
         setLookupError(apiMessage);
       } else {
@@ -124,6 +132,8 @@ export function AuthorLookup({
 
   const handleClaim = (match) => {
     setSelectedAuthor(match);
+    setShowNameSearch(false);
+    setNameMatches([]);
     onClaim(match);
   };
 
@@ -195,9 +205,18 @@ export function AuthorLookup({
 
       {showNameSearch ? (
         <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
-          <p className="text-sm text-slate-600">
-            Search by name and claim your author profile if ORC ID lookup does not match.
-          </p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm text-slate-600">
+              Search by name and claim your author profile if ORC ID lookup does not match.
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowNameSearch(false)}
+              className="shrink-0 rounded-md border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+            >
+              Close
+            </button>
+          </div>
           <div className="flex flex-col gap-2 sm:flex-row">
             <input
               type="text"

@@ -377,16 +377,13 @@ class AuthorController {
       }
 
       const claimed = await this.authorModel.isAuthorClaimed(author.id);
-      if (claimed) {
-        return res.status(409).json({
-          error:
-            "This ORCID is already associated with an account. Please contact support.",
-        });
-      }
 
-      return res
-        .status(200)
-        .json({ id: author.id, name: author.name, orc_id: author.orc_id });
+      return res.status(200).json({
+        id: author.id,
+        name: author.name,
+        orc_id: author.orc_id,
+        is_claimed: Boolean(claimed),
+      });
     } catch (error) {
       console.error("[lookupByOrcId]", error.message);
       return res

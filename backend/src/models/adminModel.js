@@ -111,7 +111,7 @@ class AdminModel {
             JOIN "user" u      ON u.id = r.user_id
             JOIN paper p       ON p.id = pc.paper_id
             JOIN status s      ON s.id = pc.status_id
-            WHERE s.status_name = $1
+            WHERE LOWER(s.status_name) = LOWER($1)
             ORDER BY pc.claimed_at DESC;
         `;
         const result = await this.db.query_executor(query, [statusName]);
