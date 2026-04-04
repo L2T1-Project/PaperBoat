@@ -274,7 +274,14 @@ function PaperDetailsPage() {
             <ul className="mt-3 space-y-2 text-sm text-slate-700">
               {paper.authors.map((author) => (
                 <li key={author.id}>
-                  #{author.position || "-"} {author.name}
+                  #{author.position || "-"}{" "}
+                  {author.id ? (
+                    <Link to={`/authors/${author.id}`} className="font-medium text-slate-800 hover:underline">
+                      {author.name}
+                    </Link>
+                  ) : (
+                    <span>{author.name}</span>
+                  )}
                 </li>
               ))}
             </ul>
