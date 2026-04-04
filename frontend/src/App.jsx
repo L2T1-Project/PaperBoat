@@ -23,6 +23,7 @@ import EditProfilePage from './pages/EditProfilePage';
 import ResearcherSuggestPaperPage from './pages/ResearcherSuggestPaperPage';
 import AdminAddPaperPage from './pages/AdminAddPaperPage';
 import StatisticsPage from './pages/StatisticsPage';
+import AdminDuplicateClaimsPage from './pages/AdminDuplicateClaimsPage';
 
 function App() {
   return (
@@ -101,6 +102,10 @@ function App() {
           <Route
             path="/admin/feedback"
             element={<ProtectedRoute allowedRoles={['admin']}><AdminFeedbackPage /></ProtectedRoute>}
+          />
+          <Route
+            path="/admin/duplicate-claims"
+            element={<ProtectedRoute allowedRoles={['admin']}><AdminDuplicateClaimsPage /></ProtectedRoute>}
           />
 
           <Route path="*" element={<Navigate to="/" replace />} />

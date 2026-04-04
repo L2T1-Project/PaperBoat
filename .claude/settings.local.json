@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -n \"transaction\\\\|Transaction\" /e/Shafnan/PaperBoat/PaperBoat/backend/src/models/*.js)",
+      "Bash(grep -n \"pool.connect\\\\|client.query\" /e/Shafnan/PaperBoat/PaperBoat/backend/src/models/*.js)",
+      "Bash(grep -E \"\\\\.\\(sql|js\\)$\")"
+    ]
+  }
+}

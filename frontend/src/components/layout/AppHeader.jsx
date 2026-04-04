@@ -47,6 +47,7 @@ const ROLE_NAV = {
     { to: "/admin/claims", label: "Claim Queue", match: (path) => path === "/admin/claims" },
     { to: "/admin/papers", label: "Add Paper", match: (path) => path === "/admin/papers" },
     { to: "/admin/feedback", label: "Feedback Inbox", match: (path) => path === "/admin/feedback" },
+    { to: "/admin/duplicate-claims", label: "Duplicate Claims", match: (path) => path === "/admin/duplicate-claims" },
   ],
 };
 

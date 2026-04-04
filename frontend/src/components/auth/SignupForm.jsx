@@ -102,6 +102,9 @@ export function SignupForm() {
   const [resolvedAuthor, setResolvedAuthor] = useState(null);
   const [resolvedVenue, setResolvedVenue] = useState(null);
   const [claimedAlreadyAuthor, setClaimedAlreadyAuthor] = useState(null);
+  const [wantsToClaim, setWantsToClaim] = useState(false);
+  const [claimMessage, setClaimMessage] = useState("");
+  const [claimDriveLink, setClaimDriveLink] = useState("");
 
   const {
     register,
@@ -134,6 +137,9 @@ export function SignupForm() {
     setResolvedAuthor(null);
     setResolvedVenue(null);
     setClaimedAlreadyAuthor(null);
+    setWantsToClaim(false);
+    setClaimMessage("");
+    setClaimDriveLink("");
     setServerError("");
     setShowPassword(false);
     setShowConfirmPassword(false);
@@ -142,6 +148,9 @@ export function SignupForm() {
 
   const handleAuthorClaim = (author) => {
     setServerError("");
+    setWantsToClaim(false);
+    setClaimMessage("");
+    setClaimDriveLink("");
     if (author.is_claimed) {
       setClaimedAlreadyAuthor(author);
       setResolvedAuthor({ _claimedFallback: true });
@@ -212,25 +221,24 @@ export function SignupForm() {
 
       login(token, { userId, role });
 
-      if (isClaimedFallback) {
+      if (isClaimedFallback && wantsToClaim && claimMessage.trim()) {
         try {
+          const claimText = claimDriveLink.trim()
+            ? `${claimMessage.trim()}\n\nEvidence: ${claimDriveLink.trim()}`
+            : claimMessage.trim();
           await api.post(
-            "/feedback",
+            "/claims",
             {
-              subject: "Author profile conflict during signup",
-              message:
-                `I tried to claim the author profile "${claimedAlreadyAuthor.name}" ` +
-                `(ID: ${claimedAlreadyAuthor.id}) during signup but it was already claimed. ` +
-                `Please help me link my account to the correct author profile.`,
+              claimed_author_id: claimedAlreadyAuthor.id,
+              claim_text: claimText,
             },
             { headers: { Authorization: `Bearer ${token}` } },
           );
+          toast.success("Account created! Your claim has been submitted for admin review.");
         } catch {
-          console.warn("Auto-feedback send failed — non-fatal");
+          console.warn("Claim submission failed — non-fatal");
+          toast.success("Account created! Note: claim submission failed, please contact support.");
         }
-        toast.success(
-          "Account created! A message has been sent to admin about your author profile.",
-        );
       } else {
         toast.success("Account created! Redirecting to dashboard...");
       }
@@ -273,6 +281,69 @@ export function SignupForm() {
             onClaim={handleAuthorClaim}
             disabled={isSubmitting}
           />
+        ) : null}
+
+        {selectedRole === "researcher" && claimedAlreadyAuthor ? (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 space-y-3 text-sm">
+            <p className="font-semibold text-amber-900">Dispute this claim?</p>
+            <p className="text-amber-800">
+              You will be signed up as a regular user. If you believe you are
+              the real author behind this profile, you can submit a formal claim
+              for admin review.
+            </p>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={wantsToClaim}
+                onChange={(e) => setWantsToClaim(e.target.checked)}
+                disabled={isSubmitting}
+                className="h-4 w-4 rounded border-amber-300 accent-amber-600"
+              />
+              <span className="font-medium text-amber-900">
+                I believe I am the real author — submit a claim
+              </span>
+            </label>
+
+            {wantsToClaim ? (
+              <div className="space-y-3 pt-1">
+                <div>
+                  <label
+                    htmlFor="claim_message"
+                    className="mb-1 block font-medium text-amber-900"
+                  >
+                    Why are you the real author?{" "}
+                    <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    id="claim_message"
+                    rows={3}
+                    value={claimMessage}
+                    onChange={(e) => setClaimMessage(e.target.value)}
+                    disabled={isSubmitting}
+                    placeholder="Explain why this profile belongs to you..."
+                    className="w-full rounded-lg border border-amber-300 px-4 py-2 focus:ring-2 focus:ring-amber-400 focus:outline-none disabled:bg-amber-100"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="claim_drive_link"
+                    className="mb-1 block font-medium text-amber-900"
+                  >
+                    Supporting evidence link (optional)
+                  </label>
+                  <input
+                    id="claim_drive_link"
+                    type="text"
+                    value={claimDriveLink}
+                    onChange={(e) => setClaimDriveLink(e.target.value)}
+                    disabled={isSubmitting}
+                    placeholder="Google Drive or similar link to supporting documents"
+                    className="w-full rounded-lg border border-amber-300 px-4 py-2 focus:ring-2 focus:ring-amber-400 focus:outline-none disabled:bg-amber-100"
+                  />
+                </div>
+              </div>
+            ) : null}
+          </div>
         ) : null}
 
         {selectedRole === "venue_user" ? (

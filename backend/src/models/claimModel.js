@@ -106,6 +106,16 @@ class ClaimModel {
                 [claimant_user_id, claimed_author_id]
             );
 
+            // Invalidate JWT tokens so both users are forced to re-login
+            // with their new roles (old researcher → user, claimant → researcher)
+            const idsToInvalidate = [claimant_user_id, old_researcher_user_id].filter(Boolean);
+            if (idsToInvalidate.length) {
+                await client.query(
+                    `UPDATE "user" SET jwt_token = NULL WHERE id = ANY($1::int[])`,
+                    [idsToInvalidate]
+                );
+            }
+
             // Update claim status
             await client.query(
                 `UPDATE author_claim_request
