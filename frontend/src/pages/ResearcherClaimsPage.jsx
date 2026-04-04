@@ -60,7 +60,7 @@ export default function ResearcherClaimsPage() {
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Researcher Workspace</p>
           <h1 className="mt-2 text-2xl font-bold text-slate-900">My Paper Claims</h1>
-          <p className="mt-2 text-sm text-slate-600">Track pending moderation decisions and outcomes for your submitted claims.</p>
+          <p className="mt-2 text-sm text-slate-600">Track each claim from submission to decision. Pending claims can be retracted before admin review.</p>
         </section>
 
         {error ? (
@@ -86,8 +86,8 @@ export default function ResearcherClaimsPage() {
                     icon={status === "Pending" ? "⏳" : status === "Approved" ? "✅" : "🧾"}
                     title={`No ${status.toLowerCase()} claims`}
                     body={status === "Pending"
-                      ? "Submit or refresh claims from paper pages to see live moderation status here."
-                      : "This section will populate automatically when claim decisions are made."}
+                      ? "Submit a claim from a paper page to start the review workflow."
+                      : "This section updates automatically when moderation decisions are recorded."}
                     ctaLabel="Browse papers"
                     ctaTo="/papers"
                     className="mt-3 py-7"

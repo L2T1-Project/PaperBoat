@@ -72,7 +72,7 @@ export default function AdminClaimsPage() {
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Admin Console</p>
           <h1 className="mt-2 text-2xl font-bold text-slate-900">Paper Claim Moderation</h1>
-          <p className="mt-2 text-sm text-slate-600">Review incoming claims and decide whether they should be approved or declined.</p>
+          <p className="mt-2 text-sm text-slate-600">Review authorship requests for papers. Approve to link the researcher to the paper author list, or decline to keep current ownership unchanged.</p>
         </section>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -89,7 +89,7 @@ export default function AdminClaimsPage() {
                 }`}
               >
                 {tab.key}
-                {activeTab === tab.key && counts[tab.key] ? ` (${counts[tab.key]})` : ""}
+                {activeTab === tab.key ? ` (${claims.length})` : ""}
               </button>
             ))}
           </div>
@@ -109,8 +109,8 @@ export default function AdminClaimsPage() {
               icon={activeTab === "Pending" ? "📭" : activeTab === "Approved" ? "✅" : "🗂️"}
               title={`No ${activeTab.toLowerCase()} claims right now`}
               body={activeTab === "Pending"
-                ? "The queue is currently clear. New submissions will appear here."
-                : "Use the Pending tab to process new moderation actions."}
+                ? "No pending requests at the moment. New submissions will appear here automatically."
+                : "Switch to Pending to review new claim requests."}
               ctaLabel="Open pending queue"
               ctaAction={() => setActiveTab("Pending")}
               className="py-8"
@@ -129,7 +129,7 @@ export default function AdminClaimsPage() {
                           {claim.paper_title}
                         </Link>
                         <p className="mt-1 text-xs text-slate-600">
-                          Claimed by {claim.full_name || claim.username} • position #{claim.position}
+                          Requested by {claim.full_name || claim.username} for author position #{claim.position}
                         </p>
                         <p className="mt-1 text-xs text-slate-500">
                           Submitted on {new Date(claim.claimed_at).toLocaleString()}

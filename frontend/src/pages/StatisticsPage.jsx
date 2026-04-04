@@ -109,10 +109,10 @@ export default function StatisticsPage() {
         <section className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur">
           <div className="absolute -right-8 -top-10 h-36 w-36 rounded-full bg-amber-300/30 blur-2xl" />
           <div className="absolute -left-8 -bottom-10 h-36 w-36 rounded-full bg-cyan-300/30 blur-2xl" />
-          <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Analytics Workspace</p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">Research Intelligence Board</h1>
+          <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Platform Statistics</p>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">Research Analytics Dashboard</h1>
           <p className="mt-2 max-w-2xl text-sm text-slate-600">
-            Explore macro trends, top-performing papers, and leading authors in each topic using citation-weighted analytics.
+            Review platform-wide publication trends, citation movement, and top-performing papers and authors by topic.
           </p>
         </section>
 
@@ -136,7 +136,7 @@ export default function StatisticsPage() {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <SectionTitle
                   title="Topic Momentum"
-                  subtitle="Hybrid score = 0.7 × citation growth + 0.3 × paper growth"
+                  subtitle="Score formula: 0.7 × citation growth + 0.3 × paper growth"
                 />
                 <select
                   value={windowDays}
@@ -202,7 +202,7 @@ export default function StatisticsPage() {
               <article className="rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-sm backdrop-blur">
                 <SectionTitle
                   title="Most Cited Papers"
-                  subtitle="Top papers ranked by total incoming citations"
+                  subtitle="Ranking by total incoming citations"
                 />
 
                 {mostCitedPapers.length === 0 ? (
@@ -238,7 +238,7 @@ export default function StatisticsPage() {
                 <div className="flex flex-wrap items-end justify-between gap-3">
                   <SectionTitle
                     title="Top Authors by Topic"
-                    subtitle="Ranked by citation count within the selected topic"
+                    subtitle="Author ranking within the selected topic by citation count"
                   />
                   <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                     Topic

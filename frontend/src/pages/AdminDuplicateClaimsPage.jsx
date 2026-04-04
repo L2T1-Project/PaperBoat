@@ -71,8 +71,8 @@ export default function AdminDuplicateClaimsPage() {
             Duplicate Author Claims
           </h1>
           <p className="mt-2 text-sm text-slate-600">
-            Review impersonation or duplicate-author claims submitted during
-            signup. Swap to transfer ownership; Keep As Is to reject.
+            Review author ownership disputes submitted during signup.
+            Approve to transfer the researcher link to the claimant, or reject to keep the current owner.
           </p>
         </section>
 
@@ -89,7 +89,7 @@ export default function AdminDuplicateClaimsPage() {
             <EmptyState
               icon="📭"
               title="No pending duplicate claims"
-              body="The queue is currently clear. New claims submitted during signup will appear here."
+              body="No ownership disputes are waiting for review. New submissions will appear here automatically."
               className="py-8"
             />
           ) : (
@@ -190,7 +190,7 @@ export default function AdminDuplicateClaimsPage() {
                         onClick={() => processClaim(claim.id, "approve")}
                         className="rounded-md border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        {isProcessing[swapKey] ? "Processing..." : "Swap (Approve)"}
+                        {isProcessing[swapKey] ? "Processing..." : "Approve and Transfer"}
                       </button>
                       <button
                         type="button"
@@ -198,7 +198,7 @@ export default function AdminDuplicateClaimsPage() {
                         onClick={() => processClaim(claim.id, "reject")}
                         className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        {isProcessing[keepKey] ? "Processing..." : "Keep As Is (Reject)"}
+                        {isProcessing[keepKey] ? "Processing..." : "Reject and Keep Current Owner"}
                       </button>
                     </div>
                   </article>

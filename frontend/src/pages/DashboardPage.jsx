@@ -102,13 +102,13 @@ export default function DashboardPage() {
     <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto w-full max-w-6xl space-y-6">
         <section className={`rounded-3xl border border-slate-200 bg-gradient-to-r ${heroTone} p-8 shadow-sm`}>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-600">Workspace</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-600">Dashboard</p>
           <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-900">Welcome back, {firstName}</h1>
           <p className="mt-2 max-w-2xl text-sm text-slate-700">
-            {role === "researcher" && "Your researcher workspace is tuned for claims, profile momentum, and publication visibility."}
-            {role === "venue_user" && "Track your venue's publication performance and author impact from one place."}
-            {role === "admin" && "Keep moderation quality high with quick access to queue and feedback operations."}
-            {!role || role === "user" ? "Save important papers, explore authors, and build your personal reading trail." : null}
+            {role === "researcher" && "Review your publication claims, track outcomes, and access your latest paper metrics."}
+            {role === "venue_user" && "Monitor venue publication performance, citation rankings, and author impact."}
+            {role === "admin" && "Manage claim moderation, paper suggestions, and feedback operations from a single panel."}
+            {!role || role === "user" ? "Browse papers, follow relevant authors, and build a focused reading collection." : null}
           </p>
         </section>
 
@@ -146,7 +146,7 @@ export default function DashboardPage() {
             ) : null}
             {role === "admin" ? (
               <div className="mt-2 space-y-2">
-                <p className="text-sm font-medium text-slate-800">Review moderation queue</p>
+                <p className="text-sm font-medium text-slate-800">Process claim and paper moderation tasks</p>
                 <div className="flex flex-wrap gap-2">
                   <Link
                     to="/admin/claims"
@@ -175,19 +175,19 @@ export default function DashboardPage() {
         {role === "admin" ? (
           <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <article className="rounded-2xl border border-rose-200 bg-rose-50 p-4 shadow-sm">
-              <p className="text-xs uppercase tracking-wide text-rose-600">Queue</p>
+              <p className="text-xs uppercase tracking-wide text-rose-600">Claims</p>
               <p className="mt-2 text-sm font-semibold text-slate-900">Pending Claims</p>
-              <p className="mt-1 text-xs text-slate-600">Prioritize unresolved authorship claims.</p>
+              <p className="mt-1 text-xs text-slate-600">Review unresolved paper authorship requests.</p>
             </article>
             <article className="rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
               <p className="text-xs uppercase tracking-wide text-amber-700">Inbox</p>
               <p className="mt-2 text-sm font-semibold text-slate-900">Feedback Responses</p>
-              <p className="mt-1 text-xs text-slate-600">Keep user communication timely and clear.</p>
+              <p className="mt-1 text-xs text-slate-600">Respond to user reports and paper suggestions.</p>
             </article>
             <article className="rounded-2xl border border-cyan-200 bg-cyan-50 p-4 shadow-sm">
-              <p className="text-xs uppercase tracking-wide text-cyan-700">Signal</p>
-              <p className="mt-2 text-sm font-semibold text-slate-900">Notification Health</p>
-              <p className="mt-1 text-xs text-slate-600">Watch moderation and response delivery behavior.</p>
+              <p className="text-xs uppercase tracking-wide text-cyan-700">Oversight</p>
+              <p className="mt-2 text-sm font-semibold text-slate-900">System Activity</p>
+              <p className="mt-1 text-xs text-slate-600">Track moderation decisions and related notifications.</p>
             </article>
             <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <p className="text-xs uppercase tracking-wide text-slate-500">Action</p>

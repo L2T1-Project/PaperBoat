@@ -6,35 +6,80 @@ class ClaimModel {
     }
 
     submitClaim = async (claimantUserId, claimedAuthorId, claimText) => {
-        // Validate: the author must be linked to an existing researcher
-        const researcherCheck = await this.db.query_executor(
-            `SELECT 1 FROM researcher WHERE author_id = $1`,
-            [claimedAuthorId]
-        );
-        if (!researcherCheck.rows.length) {
-            const err = new Error('No existing researcher is linked to this author.');
-            err.code = 'NO_RESEARCHER_LINKED';
-            throw err;
-        }
+            const client = await this.db.pool.connect();
+            try {
+                await client.query('BEGIN');
 
-        // Validate: the claimant must not already be a researcher
-        const claimantCheck = await this.db.query_executor(
-            `SELECT 1 FROM researcher WHERE user_id = $1`,
-            [claimantUserId]
-        );
-        if (claimantCheck.rows.length) {
-            const err = new Error('Claimant is already a researcher.');
-            err.code = 'ALREADY_RESEARCHER';
-            throw err;
-        }
+                // Validate: the author must be linked to an existing researcher
+                const researcherCheck = await client.query(
+                    `SELECT 1 FROM researcher WHERE author_id = $1`,
+                    [claimedAuthorId]
+                );
+                if (!researcherCheck.rows.length) {
+                    const err = new Error('No existing researcher is linked to this author.');
+                    err.code = 'NO_RESEARCHER_LINKED';
+                    throw err;
+                }
 
-        const result = await this.db.query_executor(
-            `INSERT INTO author_claim_request (claimant_user_id, claimed_author_id, claim_text)
-             VALUES ($1, $2, $3)
-             RETURNING id, claimant_user_id, claimed_author_id, claim_text, status, created_at`,
-            [claimantUserId, claimedAuthorId, claimText]
-        );
-        return result.rows[0];
+                // Validate: the claimant must not already be a researcher
+                const claimantCheck = await client.query(
+                    `SELECT 1 FROM researcher WHERE user_id = $1`,
+                    [claimantUserId]
+                );
+                if (claimantCheck.rows.length) {
+                    const err = new Error('Claimant is already a researcher.');
+                    err.code = 'ALREADY_RESEARCHER';
+                    throw err;
+                }
+
+                const result = await client.query(
+                    `INSERT INTO author_claim_request (claimant_user_id, claimed_author_id, claim_text)
+                     VALUES ($1, $2, $3)
+                     RETURNING id, claimant_user_id, claimed_author_id, claim_text, status, created_at`,
+                    [claimantUserId, claimedAuthorId, claimText]
+                );
+
+                const claim = result.rows[0];
+
+                // Notify all admins about a newly submitted duplicate-author claim
+                const contextResult = await client.query(
+                    `SELECT
+                        cu.full_name AS claimant_name,
+                        a.name AS author_name
+                     FROM "user" cu
+                     JOIN author a ON a.id = $2
+                     WHERE cu.id = $1`,
+                    [claimantUserId, claimedAuthorId]
+                );
+
+                const claimantName = contextResult.rows[0]?.claimant_name || 'A user';
+                const authorName = contextResult.rows[0]?.author_name || 'an author profile';
+                const message = `New duplicate-author claim submitted: ${claimantName} claims ownership of "${authorName}".`;
+
+                const notifResult = await client.query(
+                    `INSERT INTO notification (message)
+                     VALUES ($1)
+                     RETURNING id`,
+                    [message]
+                );
+
+                const notificationId = notifResult.rows[0].id;
+                await client.query(
+                    `INSERT INTO notification_receiver (notification_id, user_id)
+                     SELECT $1, a.user_id
+                     FROM admin a
+                     ON CONFLICT (notification_id, user_id) DO NOTHING`,
+                    [notificationId]
+                );
+
+                await client.query('COMMIT');
+                return claim;
+            } catch (error) {
+                try { await client.query('ROLLBACK'); } catch (_) { /* ignore */ }
+                throw error;
+            } finally {
+                client.release();
+            }
     };
 
     getPendingClaims = async () => {
